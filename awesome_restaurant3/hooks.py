@@ -10,6 +10,8 @@ app_license = "mit"
 
 # required_apps = []
 
+fixtures = ["Custom Field"]
+
 # Each item in the list will be shown as an app in the apps page
 # add_to_apps_screen = [
 # 	{
@@ -25,7 +27,7 @@ app_license = "mit"
 # ------------------
 
 # include js, css files in header of desk.html
-# app_include_css = "/assets/awesome_restaurant3/css/awesome_restaurant3.css"
+app_include_css = "/assets/awesome_restaurant3/css/pos_table.css"
 # app_include_js = "/assets/awesome_restaurant3/js/awesome_restaurant3.js"
 
 # include js, css files in header of web template
@@ -40,7 +42,7 @@ app_license = "mit"
 # webform_include_css = {"doctype": "public/css/doctype.css"}
 
 # include js in page
-# page_js = {"page" : "public/js/file.js"}
+page_js = {"point-of-sale": "public/js/pos/restaurant_pos.js"}
 
 # include js in doctype views
 # doctype_js = {"doctype" : "public/js/doctype.js"}
