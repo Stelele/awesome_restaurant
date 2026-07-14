@@ -168,6 +168,20 @@ class RestaurantPosController extends erpnext.PointOfSale.Controller {
     super.toggle_submitted_invoice_summary(show);
   }
 
+  close_pos() {
+    if (this.table_count > 0) {
+      Object.values(this.table_drafts).forEach((draft) => {
+        frappe.call({
+          method: "frappe.client.delete",
+          args: {
+            doctype: this.settings.frm_doctype,
+            name: draft.name,
+          },
+        }).catch(() => {});
+      });
+    }
+    super.close_pos();
+  }
 }
 
 awesome_restaurant3.RestaurantPosController = RestaurantPosController;
