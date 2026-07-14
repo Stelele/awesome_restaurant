@@ -27,14 +27,16 @@ class RestaurantPosController extends erpnext.PointOfSale.Controller {
 
   select_table(table_name) {
     this.current_table = table_name;
-    this.table_selector.hide();
-    this.render_table_badge();
 
     if (this.table_drafts[table_name]) {
       const existing_name = this.table_drafts[table_name].name;
+      this.table_selector.hide();
+      this.render_table_badge();
       this.load_existing_table_draft(existing_name, table_name);
     } else {
       this.make_new_invoice().then(() => {
+        this.table_selector.hide();
+        this.render_table_badge();
         this.frm.doc.restaurant_table = table_name;
         this.table_drafts[table_name] = {
           name: this.frm.doc.name,
@@ -43,6 +45,12 @@ class RestaurantPosController extends erpnext.PointOfSale.Controller {
           modified: this.frm.doc.modified,
         };
         this.toggle_components(true);
+      }).catch(() => {
+        this.current_table = null;
+        frappe.show_alert({
+          message: __("Failed to create draft for {0}", [table_name]),
+          indicator: "red",
+        });
       });
     }
   }
@@ -65,7 +73,14 @@ class RestaurantPosController extends erpnext.PointOfSale.Controller {
         this.toggle_components(true);
         frappe.dom.unfreeze();
       },
-    ]);
+    ]).catch(() => {
+      frappe.dom.unfreeze();
+      frappe.show_alert({
+        message: __("Failed to load draft for {0}", [table_name]),
+        indicator: "red",
+      });
+      this.go_back_to_tables();
+    });
   }
 
   clear_table(table_name) {
