@@ -1,0 +1,29 @@
+frappe.provide("awesome_restaurant3");
+
+frappe.pages["point-of-sale"].on_page_load = function (wrapper) {
+  frappe.ui.make_app_page({
+    parent: wrapper,
+    title: __("Point of Sale"),
+    single_column: true,
+    hide_sidebar: true,
+  });
+
+  frappe.require(
+    [
+      "point-of-sale.bundle.js",
+      "awesome_restaurant3/js/pos/restaurant_pos.bundle.js",
+    ],
+    function () {
+      wrapper.pos = new awesome_restaurant3.RestaurantPosController(wrapper);
+      window.cur_pos = wrapper.pos;
+    }
+  );
+};
+
+frappe.pages["point-of-sale"].refresh = function (wrapper) {
+  if (document.scannerDetectionData) {
+    onScan.detachFrom(document);
+    wrapper.pos.wrapper.html("");
+    wrapper.pos.check_opening_entry();
+  }
+};
