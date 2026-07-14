@@ -1,0 +1,35 @@
+[
+  {
+    "doctype": "Custom Field",
+    "dt": "POS Profile",
+    "fieldname": "restaurant_table_count",
+    "fieldtype": "Int",
+    "label": "Number of Tables",
+    "default": "0",
+    "insert_after": "payments",
+    "description": "Number of restaurant tables for table-based POS mode. Set to 0 to use standard POS.",
+    "translatable": 0
+  },
+  {
+    "doctype": "Custom Field",
+    "dt": "POS Invoice",
+    "fieldname": "restaurant_table",
+    "fieldtype": "Data",
+    "label": "Restaurant Table",
+    "read_only": 1,
+    "insert_after": "pos_profile",
+    "description": "Table identifier for restaurant POS mode.",
+    "translatable": 0
+  },
+  {
+    "doctype": "Custom Field",
+    "dt": "Sales Invoice",
+    "fieldname": "restaurant_table",
+    "fieldtype": "Data",
+    "label": "Restaurant Table",
+    "read_only": 1,
+    "insert_after": "pos_profile",
+    "description": "Table identifier for restaurant POS mode.",
+    "translatable": 0
+  }
+]
