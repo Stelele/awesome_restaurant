@@ -5,7 +5,7 @@ class RestaurantPosController extends erpnext.PointOfSale.Controller {
     this.prepare_menu();
     this.prepare_btns();
 
-    const table_count = this.pos_profile_data?.restaurant_table_count;
+    const table_count = this.settings?.restaurant_table_count;
     if (table_count > 0) {
       this.table_count = table_count;
       this.table_drafts = {};
