@@ -1,6 +1,7 @@
 [
   {
     "doctype": "Custom Field",
+    "name": "POS Profile-restaurant_table_count",
     "dt": "POS Profile",
     "fieldname": "restaurant_table_count",
     "fieldtype": "Int",
@@ -12,6 +13,7 @@
   },
   {
     "doctype": "Custom Field",
+    "name": "POS Invoice-restaurant_table",
     "dt": "POS Invoice",
     "fieldname": "restaurant_table",
     "fieldtype": "Data",
@@ -23,6 +25,7 @@
   },
   {
     "doctype": "Custom Field",
+    "name": "Sales Invoice-restaurant_table",
     "dt": "Sales Invoice",
     "fieldname": "restaurant_table",
     "fieldtype": "Data",
