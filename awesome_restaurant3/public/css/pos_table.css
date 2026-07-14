@@ -1,0 +1,133 @@
+.pos-table-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  padding: 20px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+@media (max-width: 1200px) {
+  .pos-table-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .pos-table-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    padding: 12px;
+  }
+}
+
+.pos-table-card {
+  background: #fff;
+  border: 2px solid #e2e6e9;
+  border-radius: 8px;
+  padding: 20px 16px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  position: relative;
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.pos-table-card:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+}
+
+.pos-table-card--free {
+  border-color: #68b771;
+  background: #f4faf5;
+}
+
+.pos-table-card--free:hover {
+  border-color: #3e8e41;
+}
+
+.pos-table-card--occupied {
+  border-color: #e98b46;
+  background: #fef6f0;
+}
+
+.pos-table-card--occupied:hover {
+  border-color: #c76a24;
+}
+
+.pos-table-card__name {
+  font-size: 18px;
+  font-weight: 700;
+  color: #213157;
+  margin-bottom: 8px;
+}
+
+.pos-table-card--free .pos-table-card__status {
+  color: #3e8e41;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.pos-table-card--occupied .pos-table-card__total {
+  font-size: 20px;
+  font-weight: 700;
+  color: #c76a24;
+  margin-bottom: 4px;
+}
+
+.pos-table-card__meta {
+  font-size: 12px;
+  color: #8890a1;
+}
+
+.pos-table-card__clear {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  font-size: 18px;
+  font-weight: 700;
+  color: #c5c9d0;
+  cursor: pointer;
+  line-height: 1;
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+
+.pos-table-card__clear:hover {
+  color: #e24c4c;
+  background: rgba(226, 76, 76, 0.1);
+}
+
+.pos-table-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #f4f5f9;
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #213157;
+  cursor: pointer;
+  margin-bottom: 12px;
+  margin-left: 20px;
+  margin-top: 8px;
+}
+
+.pos-table-badge__arrow {
+  font-size: 16px;
+  color: #8890a1;
+}
+
+.pos-table-badge:hover {
+  background: #e8e9ef;
+}
+
+.pos-table-grid-wrapper {
+  width: 100%;
+}
