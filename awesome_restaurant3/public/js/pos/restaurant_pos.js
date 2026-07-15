@@ -11,7 +11,7 @@ frappe.pages["point-of-sale"].on_page_load = function (wrapper) {
   frappe.require(
     [
       "point-of-sale.bundle.js",
-      "awesome_restaurant3/js/pos/restaurant_pos.bundle.js",
+      "restaurant_pos.bundle.js",
     ],
     function () {
       wrapper.pos = new awesome_restaurant3.RestaurantPosController(wrapper);
