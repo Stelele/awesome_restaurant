@@ -1,0 +1,89 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "field:table_number",
+ "creation": "2026-07-15 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "table_number",
+  "status",
+  "column_break_3",
+  "current_invoice",
+  "current_invoice_doctype"
+ ],
+ "fields": [
+  {
+   "fieldname": "table_number",
+   "fieldtype": "Data",
+   "label": "Table Number",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Free\nOccupied",
+   "default": "Free"
+  },
+  {
+   "fieldname": "column_break_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "current_invoice",
+   "fieldtype": "Data",
+   "label": "Current Invoice",
+   "read_only": 1
+  },
+  {
+   "fieldname": "current_invoice_doctype",
+   "fieldtype": "Link",
+   "label": "Current Invoice Doctype",
+   "options": "DocType"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-07-15 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Awesome Restaurant3",
+ "name": "POS Table",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "read": 1,
+   "role": "Accounts Manager"
+  },
+  {
+   "read": 1,
+   "role": "Accounts User"
+  },
+  {
+   "read": 1,
+   "role": "Sales Manager"
+  },
+  {
+   "read": 1,
+   "role": "Sales User"
+  }
+ ],
+ "sort_field": "table_number",
+ "sort_order": "ASC",
+ "states": [],
+ "title_field": "table_number"
+}

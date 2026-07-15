@@ -10,8 +10,6 @@ app_license = "mit"
 
 # required_apps = []
 
-fixtures = ["Custom Field"]
-
 # Each item in the list will be shown as an app in the apps page
 # add_to_apps_screen = [
 # 	{
@@ -140,13 +138,14 @@ page_js = {"point-of-sale": "public/js/pos/restaurant_pos.js"}
 # ---------------
 # Hook on document methods and events
 
-# doc_events = {
-# 	"*": {
-# 		"on_update": "method",
-# 		"on_cancel": "method",
-# 		"on_trash": "method"
-# 	}
-# }
+doc_events = {
+    "POS Closing Entry": {
+        "on_submit": "awesome_restaurant3.awesome_restaurant3.pos_table_utils.free_tables_if_all_sessions_closed"
+    },
+    "POS Table": {
+        "on_update": "awesome_restaurant3.awesome_restaurant3.pos_table_utils.broadcast_table_update"
+    }
+}
 
 # Scheduled Tasks
 # ---------------

@@ -1,8 +1,7 @@
 awesome_restaurant3.TableSelector = class {
-  constructor({ wrapper, table_count, table_drafts, events }) {
+  constructor({ wrapper, tables, events }) {
     this.wrapper = wrapper;
-    this.table_count = table_count;
-    this.table_drafts = table_drafts || {};
+    this.tables = tables || [];
     this.events = events;
 
     this.make();
@@ -19,26 +18,28 @@ awesome_restaurant3.TableSelector = class {
 
   render_grid() {
     this.$grid.empty();
-    for (let i = 1; i <= this.table_count; i++) {
-      const table_name = __("Table") + " " + i;
-      const draft = this.table_drafts[table_name];
-      const is_occupied = !!draft;
+    this.$card_map = {};
+
+    this.tables.forEach((table) => {
+      const table_number = table.table_number;
+      const is_occupied = table.status === "Occupied";
 
       const status_class = is_occupied
         ? "pos-table-card--occupied"
         : "pos-table-card--free";
 
-      const elapsed = draft?.modified
-        ? this._format_elapsed(draft.modified)
+      const elapsed = table.modified
+        ? this._format_elapsed(table.modified)
         : "";
 
       const card_html = `
-        <div class="pos-table-card ${status_class}" data-table="${i}">
+        <div class="pos-table-card ${status_class}" data-table="${table_number}">
           ${is_occupied ? '<span class="pos-table-card__clear">&times;</span>' : ""}
-          <div class="pos-table-card__name">${table_name}</div>
+          <div class="pos-table-card__name">${table_number}</div>
           ${is_occupied
-            ? `<div class="pos-table-card__total">${format_currency(draft.total, frappe.defaults.get_default("currency"))}</div>
-               <div class="pos-table-card__meta">${draft.items} item${draft.items !== 1 ? "s" : ""}${elapsed ? " · " + elapsed : ""}</div>`
+            ? `<div class="pos-table-card__meta">
+                 ${elapsed ? elapsed : __("Occupied")}
+               </div>`
             : '<div class="pos-table-card__status">' + __("Free") + "</div>"
           }
         </div>`;
@@ -46,25 +47,64 @@ awesome_restaurant3.TableSelector = class {
       const $card = $(card_html);
       $card.on("click", ".pos-table-card__clear", (e) => {
         e.stopPropagation();
-        this._confirm_clear(table_name);
+        this._confirm_clear(table_number);
       });
       $card.on("click", (e) => {
         if (!$(e.target).is(".pos-table-card__clear")) {
-          this.events.select_table(table_name);
+          this.events.select_table(table_number);
         }
       });
       this.$grid.append($card);
+      this.$card_map[table_number] = $card;
+    });
+  }
+
+  update_table(data) {
+    const $card = this.$card_map[data.table_number];
+    if (!$card) return;
+
+    const is_occupied = data.status === "Occupied";
+    $card.removeClass("pos-table-card--free pos-table-card--occupied");
+    $card.addClass(is_occupied ? "pos-table-card--occupied" : "pos-table-card--free");
+
+    const clear_btn = $card.find(".pos-table-card__clear");
+    if (is_occupied && !clear_btn.length) {
+      $card.prepend('<span class="pos-table-card__clear">&times;</span>');
+      $card.find(".pos-table-card__clear").on("click", (e) => {
+        e.stopPropagation();
+        this._confirm_clear(data.table_number);
+      });
+    } else if (!is_occupied) {
+      clear_btn.remove();
+    }
+
+    const meta_el = $card.find(".pos-table-card__meta");
+    const status_el = $card.find(".pos-table-card__status");
+    if (is_occupied) {
+      status_el.remove();
+      if (!meta_el.length) {
+        $card.find(".pos-table-card__name").after(
+          `<div class="pos-table-card__meta">${__("Occupied")}</div>`
+        );
+      }
+    } else {
+      meta_el.remove();
+      if (!status_el.length) {
+        $card.find(".pos-table-card__name").after(
+          '<div class="pos-table-card__status">' + __("Free") + "</div>"
+        );
+      }
     }
   }
 
-  _confirm_clear(table_name) {
-    const draft = this.table_drafts[table_name];
-    if (!draft) return;
+  _confirm_clear(table_number) {
+    const table = this.tables.find((t) => t.table_number === table_number);
+    if (!table || table.status !== "Occupied") return;
 
     frappe.confirm(
-      __("Clear {0}? This will delete the draft invoice and free the table.", [table_name]),
+      __("Clear {0}? This will delete the draft invoice and free the table.", [table_number]),
       () => {
-        this.events.clear_table(table_name);
+        this.events.clear_table(table_number);
       }
     );
   }
@@ -79,8 +119,8 @@ awesome_restaurant3.TableSelector = class {
     return __("{0}h ago", [hours]);
   }
 
-  refresh(drafts) {
-    this.table_drafts = drafts || this.table_drafts;
+  refresh(tables) {
+    this.tables = tables || this.tables;
     this.render_grid();
   }
 
