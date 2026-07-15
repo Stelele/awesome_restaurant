@@ -35,6 +35,9 @@ class RestaurantPosController extends erpnext.PointOfSale.Controller {
         get_frm: () => this.frm || { doc: {} },
       },
     });
+    if (this.settings?.selling_price_list) {
+      this.item_selector.price_list = this.settings.selling_price_list;
+    }
   }
 
   select_table(table_name) {
