@@ -14,6 +14,21 @@ class RestaurantPosController extends erpnext.PointOfSale.Controller {
     }
   }
 
+  init_item_selector() {
+    this.item_selector = new erpnext.PointOfSale.ItemSelector({
+      wrapper: this.$components_wrapper,
+      pos_profile: this.pos_profile,
+      settings: this.settings,
+      events: {
+        item_selected: (args) => this.on_cart_update(args),
+        get_frm: () => this.frm || { doc: {} },
+      },
+    });
+    if (this.settings?.selling_price_list) {
+      this.item_selector.price_list = this.settings.selling_price_list;
+    }
+  }
+
   async load_table_grid() {
     const tables = await frappe.db.get_list("POS Table", {
       fields: ["name", "table_number", "status", "current_invoice", "current_invoice_doctype", "modified"],
