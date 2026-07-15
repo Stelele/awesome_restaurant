@@ -25,6 +25,18 @@ class RestaurantPosController extends erpnext.PointOfSale.Controller {
     }
   }
 
+  init_item_selector() {
+    this.item_selector = new erpnext.PointOfSale.ItemSelector({
+      wrapper: this.$components_wrapper,
+      pos_profile: this.pos_profile,
+      settings: this.settings,
+      events: {
+        item_selected: (args) => this.on_cart_update(args),
+        get_frm: () => this.frm || { doc: {} },
+      },
+    });
+  }
+
   select_table(table_name) {
     this.current_table = table_name;
 
@@ -186,16 +198,34 @@ class RestaurantPosController extends erpnext.PointOfSale.Controller {
   close_pos() {
     if (this.table_count > 0) {
       Object.values(this.table_drafts).forEach((draft) => {
-        frappe.call({
-          method: "frappe.client.delete",
-          args: {
-            doctype: this.settings.frm_doctype,
-            name: draft.name,
-          },
-        }).catch(() => {});
+        if (draft?.name) {
+          frappe.call({
+            method: "frappe.client.delete",
+            args: {
+              doctype: this.settings.frm_doctype,
+              name: draft.name,
+            },
+          }).catch(() => {});
+        }
       });
     }
-    super.close_pos();
+
+    if (this.frm) {
+      super.close_pos();
+      return;
+    }
+
+    if (!this.$components_wrapper.is(":visible")) return;
+
+    let voucher = frappe.model.get_new_doc("POS Closing Entry");
+    voucher.pos_profile = this.pos_profile;
+    voucher.user = frappe.session.user;
+    voucher.company = this.company;
+    voucher.pos_opening_entry = this.pos_opening;
+    voucher.period_end_date = frappe.datetime.now_datetime();
+    voucher.posting_date = frappe.datetime.now_date();
+    voucher.posting_time = frappe.datetime.now_time();
+    frappe.set_route("Form", "POS Closing Entry", voucher.name);
   }
 }
 
