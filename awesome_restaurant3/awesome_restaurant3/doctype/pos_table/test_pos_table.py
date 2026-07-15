@@ -3,6 +3,14 @@ from frappe.tests.classes import IntegrationTestCase
 
 
 class TestPOSTable(IntegrationTestCase):
+    def setUp(self):
+        super().setUp()
+        frappe.db.begin()
+
+    def tearDown(self):
+        frappe.db.rollback()
+        super().tearDown()
+
     def test_default_status_is_free_on_insert(self):
         """A new POS Table should default to Free status."""
         table = frappe.new_doc("POS Table")
@@ -23,4 +31,3 @@ class TestPOSTable(IntegrationTestCase):
         table.status = "InvalidStatus"
         with self.assertRaises(frappe.ValidationError):
             table.insert()
-

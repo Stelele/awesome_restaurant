@@ -30,4 +30,3 @@ def free_tables_if_all_sessions_closed(doc=None, method=None):
                     "current_invoice_doctype": None,
                 },
             )
-        frappe.db.commit()

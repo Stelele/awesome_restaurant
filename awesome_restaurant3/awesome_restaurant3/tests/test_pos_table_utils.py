@@ -4,6 +4,13 @@ from frappe.tests.classes import IntegrationTestCase
 
 
 class TestBroadcastTableUpdate(IntegrationTestCase):
+    def setUp(self):
+        super().setUp()
+        frappe.db.begin()
+
+    def tearDown(self):
+        frappe.db.rollback()
+        super().tearDown()
     def test_broadcast_on_table_status_change(self):
         """Changing POS Table status should broadcast real-time update."""
         table = frappe.new_doc("POS Table")
@@ -36,11 +43,12 @@ class TestBroadcastTableUpdate(IntegrationTestCase):
 
 class TestFreeTablesOnSessionClose(IntegrationTestCase):
     def setUp(self):
-        self.table = frappe.new_doc("POS Table")
-        self.table.table_number = "FreeTest" + frappe.generate_hash(length=6)
-        self.table.status = "Occupied"
-        self.table.current_invoice = "SINV-TEST-001"
-        self.table.insert()
+        super().setUp()
+        frappe.db.begin()
+
+    def tearDown(self):
+        frappe.db.rollback()
+        super().tearDown()
 
     def test_frees_tables_when_no_open_sessions_remain(self):
         """All POS Tables should be freed when no open POS Opening Entries exist."""
@@ -48,12 +56,18 @@ class TestFreeTablesOnSessionClose(IntegrationTestCase):
             free_tables_if_all_sessions_closed,
         )
 
+        table = frappe.new_doc("POS Table")
+        table.table_number = "FreeTest" + frappe.generate_hash(length=6)
+        table.status = "Occupied"
+        table.current_invoice = "SINV-TEST-001"
+        table.insert()
+
         with patch.object(frappe.db, "count", return_value=0):
             free_tables_if_all_sessions_closed()
 
-        self.table.reload()
-        self.assertEqual(self.table.status, "Free")
-        self.assertIsNone(self.table.current_invoice)
+        table.reload()
+        self.assertEqual(table.status, "Free")
+        self.assertIsNone(table.current_invoice)
 
     def test_does_not_free_tables_when_sessions_open(self):
         """Tables should NOT be freed when there are still open sessions."""
@@ -61,8 +75,14 @@ class TestFreeTablesOnSessionClose(IntegrationTestCase):
             free_tables_if_all_sessions_closed,
         )
 
+        table = frappe.new_doc("POS Table")
+        table.table_number = "KeepTest" + frappe.generate_hash(length=6)
+        table.status = "Occupied"
+        table.current_invoice = "SINV-KEEP-TEST-001"
+        table.insert()
+
         with patch.object(frappe.db, "count", return_value=5):
             free_tables_if_all_sessions_closed()
 
-        self.table.reload()
-        self.assertEqual(self.table.status, "Occupied")
+        table.reload()
+        self.assertEqual(table.status, "Occupied")
