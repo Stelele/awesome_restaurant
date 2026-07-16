@@ -21,6 +21,13 @@ def setup_pos_table_environment():
 
     _cleanup_existing_data(frappe.session.user)
 
+    for table_name in frappe.get_all("POS Table", pluck="name"):
+        try:
+            frappe.delete_doc("POS Table", table_name, ignore_permissions=True, delete_permanently=True)
+        except Exception:
+            pass
+    frappe.db.commit()
+
     for i in range(1, 5):
         table = frappe.get_doc({
             "doctype": "POS Table",
@@ -36,8 +43,8 @@ def setup_pos_table_environment():
     opening.company = company
     opening.period_start_date = frappe.utils.now_datetime()
     opening.append("balance_details", {"mode_of_payment": "Cash", "opening_amount": 0})
-    opening.status = "Open"
     opening.insert(ignore_permissions=True)
+    opening.submit()
     _CREATED["opening_entry"] = opening.name
 
     frappe.db.commit()

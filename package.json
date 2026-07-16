@@ -1,5 +1,10 @@
 {
   "devDependencies": {
-    "cypress": "13.17.0"
+    "@4tw/cypress-drag-drop": "^2",
+    "@cypress/code-coverage": "^3",
+    "@testing-library/cypress": "^10",
+    "cypress": "13.17.0",
+    "cypress-real-events": "*",
+    "cypress-split": "^1.0.0"
   }
 }

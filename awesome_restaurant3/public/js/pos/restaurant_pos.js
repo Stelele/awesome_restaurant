@@ -8,16 +8,12 @@ frappe.pages["point-of-sale"].on_page_load = function (wrapper) {
     hide_sidebar: true,
   });
 
-  frappe.require(
-    [
-      "point-of-sale.bundle.js",
-      "restaurant_pos.bundle.js",
-    ],
-    function () {
+  frappe.require("point-of-sale.bundle.js", function () {
+    frappe.require("restaurant_pos.bundle.js", function () {
       wrapper.pos = new awesome_restaurant3.RestaurantPosController(wrapper);
       window.cur_pos = wrapper.pos;
-    }
-  );
+    });
+  });
 };
 
 frappe.pages["point-of-sale"].refresh = function (wrapper) {

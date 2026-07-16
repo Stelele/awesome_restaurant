@@ -1,10 +1,12 @@
 context("POS Table Grid", () => {
     before(() => {
-        cy.login();
+        cy.login("Administrator", "admin");
+        cy.visit("/app");
         cy.call("awesome_restaurant3.awesome_restaurant3.tests.ui_test_helpers.setup_pos_table_environment");
     });
 
     after(() => {
+        cy.visit("/app");
         cy.call("awesome_restaurant3.awesome_restaurant3.tests.ui_test_helpers.teardown_pos_table_environment");
     });
 

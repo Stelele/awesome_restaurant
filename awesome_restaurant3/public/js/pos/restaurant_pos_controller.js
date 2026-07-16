@@ -30,6 +30,10 @@ class RestaurantPosController extends erpnext.PointOfSale.Controller {
   }
 
   async load_table_grid() {
+    if (this.table_selector?.$component) {
+      this.table_selector.$component.remove();
+    }
+
     const tables = await frappe.db.get_list("POS Table", {
       fields: ["name", "table_number", "status", "current_invoice", "current_invoice_doctype", "modified"],
       order_by: "table_number",
