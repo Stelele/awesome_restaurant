@@ -5,12 +5,15 @@
  "creation": "2026-07-15 00:00:00.000000",
  "doctype": "DocType",
  "engine": "InnoDB",
+ "quick_entry": 1,
  "field_order": [
   "table_number",
   "status",
   "column_break_3",
   "current_invoice",
-  "current_invoice_doctype"
+  "current_invoice_doctype",
+  "applicable_profiles_section",
+  "applicable_profiles"
  ],
  "fields": [
   {
@@ -42,6 +45,18 @@
    "fieldtype": "Link",
    "label": "Current Invoice Doctype",
    "options": "DocType"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "applicable_profiles_section",
+   "fieldtype": "Section Break",
+   "label": "Applicable POS Profiles"
+  },
+  {
+   "fieldname": "applicable_profiles",
+   "fieldtype": "Table",
+   "label": "Applicable POS Profiles",
+   "options": "POS Table Profile"
   }
  ],
  "index_web_pages_for_search": 1,

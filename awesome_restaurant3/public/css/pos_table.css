@@ -131,3 +131,28 @@
 .pos-table-grid-wrapper {
   width: 100%;
 }
+
+.point-of-sale-app > .pos-table-grid-wrapper {
+	grid-column: 1 / -1;
+}
+
+.point-of-sale-app > .pos-table-badge {
+	grid-column: 1 / -1;
+	background: var(--bg-light-gray);
+	border-bottom: 1px solid var(--border-color);
+	padding: 10px 20px;
+	margin: 0;
+	border-radius: 0;
+	font-size: var(--text-md);
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.point-of-sale-app > .pos-table-badge .pos-table-badge__arrow {
+	font-size: var(--text-lg);
+}
+
+.point-of-sale-app > .pos-table-badge .pos-table-badge__label {
+	font-weight: 600;
+}

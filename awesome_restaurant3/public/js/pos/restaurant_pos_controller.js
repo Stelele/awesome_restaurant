@@ -30,32 +30,47 @@ class RestaurantPosController extends erpnext.PointOfSale.Controller {
   }
 
   async load_table_grid() {
-    if (this.table_selector?.$component) {
-      this.table_selector.$component.remove();
-    }
-
-    const tables = await frappe.db.get_list("POS Table", {
-      fields: ["name", "table_number", "status", "current_invoice", "current_invoice_doctype", "modified"],
-      order_by: "table_number",
-    });
-
-    this.table_selector = new awesome_restaurant3.TableSelector({
-      wrapper: this.$components_wrapper,
-      tables: tables,
-      events: {
-        select_table: (table_name) => this.select_table(table_name),
-        clear_table: (table_name) => this.clear_table(table_name),
-      },
+    const { message: tables } = await frappe.call({
+      method: "awesome_restaurant3.awesome_restaurant3.doctype.pos_table.pos_table.get_tables_for_profile",
+      args: { pos_profile: this.pos_profile },
     });
 
     this.toggle_components(false);
 
-    frappe.realtime.off("pos_table_update");
-    frappe.realtime.on("pos_table_update", (data) => {
-      if (this.table_selector) {
-        this.table_selector.update_table(data);
-      }
+    if (this.table_selector) {
+      this.table_selector.refresh(tables);
+    } else {
+      this.table_selector = new awesome_restaurant3.TableSelector({
+        wrapper: this.$components_wrapper,
+        tables: tables,
+        events: {
+          select_table: (table_name) => this.select_table(table_name),
+          clear_table: (table_name) => this.clear_table(table_name),
+        },
+      });
+      frappe.realtime.off("pos_table_update");
+      frappe.realtime.on("pos_table_update", (data) => {
+        if (this.table_selector) {
+          this.table_selector.update_table(data);
+        }
+      });
+    }
+
+    this._fix_table_grid_css();
+    this.table_selector.show();
+  }
+
+  _fix_table_grid_css() {
+    this.wrapper.find(".pos-table-grid-wrapper").css("grid-column", "1 / -1");
+    this.wrapper.find(".pos-table-badge").css({
+      "grid-column": "1 / -1",
+      "background": "var(--bg-light-gray)",
+      "border-bottom": "1px solid var(--border-color)",
+      "padding": "10px 20px",
+      "margin": "0",
+      "border-radius": "0",
     });
+    $(".datepicker--open, .datepicker--nav, .datepicker--content, [data-datepicker], .dtpicker").remove();
   }
 
   async select_table(table_number) {
@@ -94,34 +109,29 @@ class RestaurantPosController extends erpnext.PointOfSale.Controller {
     }
   }
 
-  load_existing_table_draft(docname, doctype, table_name) {
-    frappe.run_serially([
-      () => frappe.dom.freeze(),
-      () => this.make_invoice_frm(doctype),
-      () => {
-        return frappe.db.get_doc(doctype, docname).then((doc) => {
-          frappe.model.sync(doc);
-          this.frm.refresh(docname);
-        });
-      },
-      () => this.frm.call("reset_mode_of_payments"),
-      () => this.cart.load_invoice(),
-      () => {
-        this.frm.doc.restaurant_table = table_name;
-        this.toggle_components(true);
-        frappe.dom.unfreeze();
-      },
-    ]).catch(() => {
-      frappe.dom.unfreeze();
+  async load_existing_table_draft(docname, doctype, table_name) {
+    try {
+      if (!this.frm || this.frm.doctype !== doctype) {
+        await this.make_invoice_frm(doctype);
+      }
+      const doc = await frappe.db.get_doc(doctype, docname);
+      frappe.model.sync(doc);
+      this.frm.refresh(docname);
+      await this.frm.call("reset_mode_of_payments");
+      this.cart.load_invoice();
+      this.frm.doc.restaurant_table = table_name;
+      this.toggle_components(true);
+    } catch (err) {
       this.current_table_doc = null;
       this.frm = null;
       this.remove_table_badge();
-      this.load_table_grid().then(() => {
-        this.toggle_components(false);
-        this.table_selector.show();
-        this.select_table(table_name);
+      frappe.show_alert({
+        message: __("Could not load draft. It may have been deleted."),
+        indicator: "red",
       });
-    });
+      await this.load_table_grid();
+      this.table_selector.show();
+    }
   }
 
   async clear_table(table_number) {
@@ -148,8 +158,6 @@ class RestaurantPosController extends erpnext.PointOfSale.Controller {
     }
 
     await this.load_table_grid();
-    this.toggle_components(false);
-    this.table_selector.show();
     frappe.show_alert({ message: __("{0} cleared", [table_number]), indicator: "green" });
   }
 
@@ -170,14 +178,24 @@ class RestaurantPosController extends erpnext.PointOfSale.Controller {
   }
 
   async go_back_to_tables() {
-    if (this.current_table_doc) {
+    if (this.current_table_doc && this.frm) {
       const items_count = this.frm?.doc?.items?.length || 0;
       if (items_count === 0) {
+        if (this.frm.doc && this.frm.doc.name) {
+          try { await this.frm.doc.cancel(); } catch (e) {}
+        }
         await frappe.db.set_value("POS Table", this.current_table_doc.name, {
           status: "Free",
           current_invoice: null,
           current_invoice_doctype: null,
         });
+      } else {
+        try {
+          await frappe.call({
+            method: "frappe.desk.form.save.savedocs",
+            args: { doc: JSON.stringify(this.frm.doc), action: "Save" },
+          });
+        } catch (e) {}
       }
     }
     this.current_table_doc = null;
@@ -186,9 +204,7 @@ class RestaurantPosController extends erpnext.PointOfSale.Controller {
     if (this.payment && this.payment.$component) {
       this.payment.toggle_component(false);
     }
-    this.toggle_components(false);
     await this.load_table_grid();
-    this.table_selector.show();
   }
 
   render_table_badge() {
@@ -200,6 +216,7 @@ class RestaurantPosController extends erpnext.PointOfSale.Controller {
       </div>`;
     this.$table_badge = $(html).on("click", () => this.go_back_to_tables());
     this.$components_wrapper.prepend(this.$table_badge);
+    this._fix_table_grid_css();
   }
 
   remove_table_badge() {
@@ -227,13 +244,13 @@ class RestaurantPosController extends erpnext.PointOfSale.Controller {
       this.current_table_doc = null;
       this.frm = null;
       this.remove_table_badge();
-      this.load_table_grid().then(() => {
-        this.toggle_components(false);
-        this.table_selector.show();
-      });
+      this.load_table_grid();
       return;
     }
     super.toggle_submitted_invoice_summary(show);
+  }
+
+  check_outdated_pos_opening_entry() {
   }
 
   close_pos() {
