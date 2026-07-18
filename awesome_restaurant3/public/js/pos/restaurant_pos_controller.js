@@ -70,7 +70,10 @@ class RestaurantPosController extends erpnext.PointOfSale.Controller {
       "margin": "0",
       "border-radius": "0",
     });
-    $(".datepicker--open, .datepicker--nav, .datepicker--content, [data-datepicker], .dtpicker").remove();
+    $("body > .datepicker--open, body > .datepicker--nav, body > .datepicker--content, "
+      + ".datepicker--open, .datepicker--nav, .datepicker--content, "
+      + "[data-datepicker], .dtpicker, .picker, .daterangepicker")
+      .remove();
   }
 
   async select_table(table_number) {
@@ -84,29 +87,36 @@ class RestaurantPosController extends erpnext.PointOfSale.Controller {
     this.current_table_doc = table;
 
     if (table.status === "Occupied" && table.current_invoice) {
-      this.table_selector.hide();
-      this.render_table_badge();
-      this.load_existing_table_draft(table.current_invoice, table.current_invoice_doctype, table_number);
-    } else {
-      this.table_selector.hide();
-      this.render_table_badge();
-      this.make_new_invoice().then(async () => {
-        this.frm.doc.restaurant_table = table_number;
-        await frappe.db.set_value("POS Table", table.name, {
-          status: "Occupied",
-          current_invoice: this.frm.doc.name,
-          current_invoice_doctype: this.settings.frm_doctype,
-        });
-        this.toggle_components(true);
-      }).catch(() => {
-        this.current_table_doc = null;
-        frappe.show_alert({
-          message: __("Failed to create draft for {0}", [table_number]),
-          indicator: "red",
-        });
-        this.load_table_grid().then(() => this.table_selector.show());
-      });
+      const invoice_exists = await frappe.db.exists(table.current_invoice_doctype, table.current_invoice);
+      if (invoice_exists) {
+        this.table_selector.hide();
+        this.render_table_badge();
+        this.load_existing_table_draft(table.current_invoice, table.current_invoice_doctype, table_number);
+        return;
+      }
     }
+    this.table_selector.hide();
+    this.render_table_badge();
+    this.make_new_invoice().then(async () => {
+      this.frm.doc.restaurant_table = table_number;
+      const { message } = await frappe.db.get_value("POS Profile", this.pos_profile, "customer");
+      if (message?.customer) {
+        this.frm.doc.customer = message.customer;
+      }
+      await frappe.db.set_value("POS Table", table.name, {
+        status: "Occupied",
+        current_invoice: null,
+        current_invoice_doctype: null,
+      });
+      this.toggle_components(true);
+    }).catch(() => {
+      this.current_table_doc = null;
+      frappe.show_alert({
+        message: __("Failed to create draft for {0}", [table_number]),
+        indicator: "red",
+      });
+      this.load_table_grid().then(() => this.table_selector.show());
+    })
   }
 
   async load_existing_table_draft(docname, doctype, table_name) {
@@ -122,15 +132,15 @@ class RestaurantPosController extends erpnext.PointOfSale.Controller {
       this.frm.doc.restaurant_table = table_name;
       this.toggle_components(true);
     } catch (err) {
-      this.current_table_doc = null;
       this.frm = null;
       this.remove_table_badge();
       frappe.show_alert({
-        message: __("Could not load draft. It may have been deleted."),
-        indicator: "red",
+        message: __("Could not load draft. Re-creating invoice."),
+        indicator: "orange",
       });
-      await this.load_table_grid();
-      this.table_selector.show();
+      this.current_table_doc.status = "Free";
+      this.current_table_doc.current_invoice = null;
+      this.select_table(table_name);
     }
   }
 
@@ -142,8 +152,12 @@ class RestaurantPosController extends erpnext.PointOfSale.Controller {
     const table = docs[0];
     if (!table) return;
 
-    if (table.current_invoice) {
-      frappe.model.delete_doc(table.current_invoice_doctype, table.current_invoice, () => {});
+    if (table.current_invoice && table.current_invoice_doctype) {
+      await frappe.db.get_doc(table.current_invoice_doctype, table.current_invoice).then(doc => {
+        if (doc.docstatus === 0) {
+          return frappe.db.delete_doc(table.current_invoice_doctype, table.current_invoice);
+        }
+      }).catch(() => {});
     }
     await frappe.db.set_value("POS Table", table.name, {
       status: "Free",
@@ -181,20 +195,33 @@ class RestaurantPosController extends erpnext.PointOfSale.Controller {
     if (this.current_table_doc && this.frm) {
       const items_count = this.frm?.doc?.items?.length || 0;
       if (items_count === 0) {
-        if (this.frm.doc && this.frm.doc.name) {
-          try { await this.frm.doc.cancel(); } catch (e) {}
-        }
         await frappe.db.set_value("POS Table", this.current_table_doc.name, {
           status: "Free",
           current_invoice: null,
           current_invoice_doctype: null,
         });
+        if (this.frm.doc && this.frm.doc.name && !this.frm.doc.__islocal) {
+          try { await this.frm.doc.cancel(); } catch (e) {}
+        }
       } else {
         try {
           await frappe.call({
             method: "frappe.desk.form.save.savedocs",
             args: { doc: JSON.stringify(this.frm.doc), action: "Save" },
           });
+          const invoices = await frappe.db.get_list(this.settings.frm_doctype, {
+            fields: ["name"],
+            filters: { restaurant_table: this.current_table_doc.table_number, docstatus: 0 },
+            order_by: "modified desc",
+            limit: 1,
+          });
+          if (invoices.length > 0) {
+            await frappe.db.set_value("POS Table", this.current_table_doc.name, {
+              status: "Occupied",
+              current_invoice: invoices[0].name,
+              current_invoice_doctype: this.settings.frm_doctype,
+            });
+          }
         } catch (e) {}
       }
     }

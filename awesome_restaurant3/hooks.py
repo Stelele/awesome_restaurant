@@ -134,6 +134,27 @@ page_js = {"point-of-sale": "public/js/pos/restaurant_pos.js"}
 # 	"Event": "frappe.desk.doctype.event.event.has_permission",
 # }
 
+# Custom Fields
+# -------------
+custom_fields = {
+	"POS Invoice": [
+		{
+			"fieldname": "restaurant_table",
+			"label": "Restaurant Table",
+			"fieldtype": "Data",
+			"insert_after": "pos_profile",
+		}
+	],
+	"Sales Invoice": [
+		{
+			"fieldname": "restaurant_table",
+			"label": "Restaurant Table",
+			"fieldtype": "Data",
+			"insert_after": "pos_profile",
+		}
+	],
+}
+
 # Document Events
 # ---------------
 # Hook on document methods and events
