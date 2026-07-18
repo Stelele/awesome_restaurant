@@ -29,6 +29,11 @@ class RestaurantPosController extends erpnext.PointOfSale.Controller {
     }
   }
 
+  async on_cart_update(args) {
+    this._cart_modified = true;
+    return super.on_cart_update(args);
+  }
+
   async load_table_grid() {
     const tables = await frappe.db.get_list("POS Table", {
       filters: [["POS Table Profile", "pos_profile", "=", this.pos_profile]],
@@ -77,6 +82,7 @@ class RestaurantPosController extends erpnext.PointOfSale.Controller {
     if (!table) return;
 
     this.current_table_doc = table;
+    this._cart_modified = false;
     this.table_selector.hide();
     this.render_table_badge();
 
@@ -106,6 +112,7 @@ class RestaurantPosController extends erpnext.PointOfSale.Controller {
       frappe.model.sync(doc);
       this.frm.refresh(docname);
       this.frm.doc.restaurant_table = table_name;
+      this._cart_modified = false;
       this.cart.load_invoice();
       this.toggle_components(true);
     } catch (err) {
@@ -177,7 +184,9 @@ class RestaurantPosController extends erpnext.PointOfSale.Controller {
           try { await frappe.db.delete_doc(this.frm.doc.doctype, this.frm.doc.name); } catch (e) {}
         }
       } else {
-        await this.frm.save();
+        if (this._cart_modified) {
+          await this.frm.save();
+        }
         await frappe.db.set_value("POS Table", this.current_table_doc.name, {
           status: "Occupied",
           current_invoice: this.frm.doc.name,
