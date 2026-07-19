@@ -34,6 +34,14 @@ class RestaurantPosController extends erpnext.PointOfSale.Controller {
     return super.on_cart_update(args);
   }
 
+  remove_item_from_cart(item_row) {
+    const idx = this.frm.doc.items.findIndex(i => i.name === item_row.name);
+    if (idx !== -1) {
+      this.frm.doc.items.splice(idx, 1);
+      this.frm.refresh_field("items");
+    }
+  }
+
   async load_table_grid() {
     const tables = await frappe.db.get_list("POS Table", {
       filters: [["POS Table Profile", "pos_profile", "=", this.pos_profile]],
@@ -105,15 +113,28 @@ class RestaurantPosController extends erpnext.PointOfSale.Controller {
 
   async load_existing_table_draft(docname, doctype, table_name) {
     try {
-      if (!this.frm || this.frm.doctype !== doctype) {
-        await this.make_invoice_frm(doctype);
-      }
-      const doc = await frappe.db.get_doc(doctype, docname);
-      frappe.model.sync(doc);
-      this.frm.refresh(docname);
+      const draft = await frappe.db.get_doc(doctype, docname);
+      const items = [...draft.items];
+
+      await this.make_new_invoice();
       this.frm.doc.restaurant_table = table_name;
+
+      for (let item of items) {
+        await super.on_cart_update({
+          item: {
+            item_code: item.item_code,
+            batch_no: item.batch_no,
+            serial_no: item.serial_no,
+            rate: item.rate,
+            uom: item.uom,
+            stock_uom: item.stock_uom,
+          },
+          field: "qty",
+          value: item.qty,
+        });
+      }
+
       this._cart_modified = false;
-      this.cart.load_invoice();
       this.toggle_components(true);
     } catch (err) {
       this.frm = null;
