@@ -74,6 +74,7 @@ class RestaurantPosController extends erpnext.PointOfSale.Controller {
     });
 
     this._fix_table_grid_css();
+    this.$components_wrapper.addClass("restaurant-table-mode");
     this.table_selector.show();
   }
 
@@ -121,7 +122,19 @@ class RestaurantPosController extends erpnext.PointOfSale.Controller {
           () => this.sync_draft_invoice_to_frm(doctype, docname),
           () => { this.frm.doc.restaurant_table = table_name; },
           () => this.frm.refresh(docname),
-          () => this.frm.call("reset_mode_of_payments"),
+          () => {
+            const orig = frappe.show_alert;
+            frappe.show_alert = function (msg, ...args) {
+              if (
+                (typeof msg === "string" && msg.includes("Payment methods refreshed"))
+                || msg?.message?.includes("Payment methods refreshed")
+              ) { return; }
+              return orig.call(this, msg, ...args);
+            };
+            return this.frm.call("reset_mode_of_payments").then(() => {
+              frappe.show_alert = orig;
+            });
+          },
           () => this.cart.load_invoice(),
           () => this.toggle_components(true),
           () => resolve(),
@@ -183,17 +196,6 @@ class RestaurantPosController extends erpnext.PointOfSale.Controller {
     super.new_invoice_event();
   }
 
-  async save_draft() {
-    if (this.current_table_doc && this.frm) {
-      await this.frm.save();
-      await frappe.db.set_value("POS Table", this.current_table_doc.name, {
-        status: "Occupied",
-        current_invoice: this.frm.doc.name,
-        current_invoice_doctype: this.settings.frm_doctype,
-      });
-    }
-  }
-
   async go_back_to_tables() {
     if (!this.current_table_doc) {
       return await this._navigate_to_grid();
@@ -239,11 +241,9 @@ class RestaurantPosController extends erpnext.PointOfSale.Controller {
       <div class="pos-table-badge" id="pos-table-badge">
         <span class="pos-table-badge__arrow">&larr;</span>
         <span class="pos-table-badge__label">${table}</span>
-        <button class="pos-table-badge__save btn btn-xs btn-primary pull-right">${__("Save")}</button>
       </div>`;
     this.$table_badge = $(html)
-      .on("click", ".pos-table-badge__arrow, .pos-table-badge__label", () => this.go_back_to_tables())
-      .on("click", ".pos-table-badge__save", () => this.save_draft());
+      .on("click", () => this.go_back_to_tables());
     this.$components_wrapper.prepend(this.$table_badge);
     this._fix_table_grid_css();
   }

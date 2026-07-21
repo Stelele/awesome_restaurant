@@ -154,9 +154,14 @@
 }
 
 .point-of-sale-app > .pos-table-badge .pos-table-badge__label {
-	font-weight: 600;
+  font-weight: 600;
 }
 
-.point-of-sale-app > .pos-table-badge .pos-table-badge__save {
-	margin-left: auto;
+.point-of-sale-app.restaurant-table-mode > .customer-cart-container > .cart-container > .abs-cart-container > .cart-totals-section {
+  position: sticky;
+  bottom: 0;
+  background: var(--card-bg, #fff);
+  z-index: 1;
+  padding-bottom: 24px;
 }
+
