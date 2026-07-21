@@ -14,6 +14,11 @@ class RestaurantPosController extends erpnext.PointOfSale.Controller {
     }
   }
 
+  init_item_cart() {
+    super.init_item_cart();
+    this.cart.events.get_frm = () => this.frm || { doc: { items: [], currency: "" } };
+  }
+
   init_order_summary() {
     super.init_order_summary();
     const parent_new_order = this.order_summary.events.new_order;
@@ -51,23 +56,22 @@ class RestaurantPosController extends erpnext.PointOfSale.Controller {
     this.toggle_components(false);
 
     if (this.table_selector) {
-      this.table_selector.refresh(tables);
-    } else {
-      this.table_selector = new awesome_restaurant3.TableSelector({
-        wrapper: this.$components_wrapper,
-        tables: tables,
-        events: {
-          select_table: (table_number) => this.select_table(table_number),
-          clear_table: (table_number) => this.clear_table(table_number),
-        },
-      });
-      frappe.realtime.off("pos_table_update");
-      frappe.realtime.on("pos_table_update", (data) => {
-        if (this.table_selector) {
-          this.table_selector.update_table(data);
-        }
-      });
+      this.table_selector.$component.remove();
     }
+    this.table_selector = new awesome_restaurant3.TableSelector({
+      wrapper: this.$components_wrapper,
+      tables: tables,
+      events: {
+        select_table: (table_number) => this.select_table(table_number),
+        clear_table: (table_number) => this.clear_table(table_number),
+      },
+    });
+    frappe.realtime.off("pos_table_update");
+    frappe.realtime.on("pos_table_update", (data) => {
+      if (this.table_selector) {
+        this.table_selector.update_table(data);
+      }
+    });
 
     this._fix_table_grid_css();
     this.table_selector.show();
@@ -187,7 +191,6 @@ class RestaurantPosController extends erpnext.PointOfSale.Controller {
         current_invoice: this.frm.doc.name,
         current_invoice_doctype: this.settings.frm_doctype,
       });
-      frappe.show_alert({ message: __("Draft saved"), indicator: "green" });
     }
   }
 

@@ -22,4 +22,13 @@ frappe.pages["point-of-sale"].refresh = function (wrapper) {
     wrapper.pos.wrapper.html("");
     wrapper.pos.check_opening_entry();
   }
+  if (wrapper.pos && wrapper.pos.table_mode && (!wrapper.pos.frm || wrapper.pos.frm.doc?.docstatus === 1)) {
+    wrapper.pos.load_table_grid();
+  }
+};
+
+frappe.pages["point-of-sale"].on_page_show = function (wrapper) {
+  if (wrapper.pos) {
+    wrapper.pos._fix_table_grid_css();
+  }
 };
