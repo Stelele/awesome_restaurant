@@ -156,3 +156,7 @@
 .point-of-sale-app > .pos-table-badge .pos-table-badge__label {
 	font-weight: 600;
 }
+
+.point-of-sale-app > .pos-table-badge .pos-table-badge__save {
+	margin-left: auto;
+}
