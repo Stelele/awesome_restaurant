@@ -321,6 +321,12 @@ class RestaurantPosController extends erpnext.PointOfSale.Controller {
       });
       if (this.current_table_doc) {
         this.current_table_doc._kitchen_sent = true;
+        await frappe.db.set_value("POS Table", this.current_table_doc.name, {
+          current_invoice: this.frm.doc.name,
+          current_invoice_doctype: this.frm.doctype,
+          current_total: this.frm.doc.grand_total,
+          current_item_count: this.frm.doc.items?.length || 0,
+        });
       }
       frappe.show_alert({
         message: __("Order sent to kitchen"),
