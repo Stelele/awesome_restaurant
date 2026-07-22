@@ -53,6 +53,12 @@ class RestaurantPosController extends erpnext.PointOfSale.Controller {
       order_by: "table_number",
     });
 
+    tables.sort((a, b) => {
+      const numA = parseInt(a.table_number.replace(/\D/g, ""), 10);
+      const numB = parseInt(b.table_number.replace(/\D/g, ""), 10);
+      return numA - numB;
+    });
+
     this.toggle_components(false);
 
     if (this.table_selector) {
