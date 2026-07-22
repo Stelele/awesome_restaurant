@@ -6,15 +6,18 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "quick_entry": 1,
- "field_order": [
-  "table_number",
-  "status",
-  "column_break_3",
-  "current_invoice",
-  "current_invoice_doctype",
-  "applicable_profiles_section",
-  "applicable_profiles"
- ],
+  "field_order": [
+   "table_number",
+   "status",
+   "column_break_3",
+   "current_invoice",
+   "current_invoice_doctype",
+   "current_total",
+   "current_item_count",
+   "occupied_at",
+   "applicable_profiles_section",
+   "applicable_profiles"
+  ],
  "fields": [
   {
    "fieldname": "table_number",
@@ -40,13 +43,31 @@
    "label": "Current Invoice",
    "read_only": 1
   },
-  {
-   "fieldname": "current_invoice_doctype",
-   "fieldtype": "Link",
-   "label": "Current Invoice Doctype",
-   "options": "DocType"
-  },
-  {
+   {
+    "fieldname": "current_invoice_doctype",
+    "fieldtype": "Link",
+    "label": "Current Invoice Doctype",
+    "options": "DocType"
+   },
+   {
+    "fieldname": "current_total",
+    "fieldtype": "Currency",
+    "label": "Current Total",
+    "read_only": 1
+   },
+   {
+    "fieldname": "current_item_count",
+    "fieldtype": "Int",
+    "label": "Current Item Count",
+    "read_only": 1
+   },
+   {
+    "fieldname": "occupied_at",
+    "fieldtype": "Datetime",
+    "label": "Occupied At",
+    "read_only": 1
+   },
+   {
    "collapsible": 1,
    "fieldname": "applicable_profiles_section",
    "fieldtype": "Section Break",

@@ -28,17 +28,28 @@ awesome_restaurant3.TableSelector = class {
         ? "pos-table-card--occupied"
         : "pos-table-card--free";
 
-      const elapsed = table.modified
-        ? this._format_elapsed(table.modified)
+      const elapsed = table.occupied_at
+        ? this._format_elapsed(table.occupied_at)
+        : "";
+
+      const total = is_occupied && table.current_total
+        ? frappe.format(table.current_total, { fieldtype: "Currency" })
+        : "";
+
+      const item_count = is_occupied && table.current_item_count
+        ? __("{0} items", [table.current_item_count])
         : "";
 
       const card_html = `
         <div class="pos-table-card ${status_class}" data-table="${table_number}">
           ${is_occupied ? '<span class="pos-table-card__clear">&times;</span>' : ""}
           <div class="pos-table-card__name">${table_number}</div>
+          ${is_occupied && total
+            ? `<div class="pos-table-card__total">${total}</div>`
+            : ""}
           ${is_occupied
             ? `<div class="pos-table-card__meta">
-                 ${elapsed ? elapsed : __("Occupied")}
+                 ${[item_count, elapsed].filter(Boolean).join(" · ") || __("Occupied")}
                </div>`
             : '<div class="pos-table-card__status">' + __("Free") + "</div>"
           }
@@ -80,8 +91,16 @@ awesome_restaurant3.TableSelector = class {
 
     const meta_el = $card.find(".pos-table-card__meta");
     const status_el = $card.find(".pos-table-card__status");
+    const total_el = $card.find(".pos-table-card__total");
     if (is_occupied) {
       status_el.remove();
+      total_el.remove();
+      if (data.current_total) {
+        const formatted = frappe.format(data.current_total, { fieldtype: "Currency" });
+        $card.find(".pos-table-card__name").after(
+          `<div class="pos-table-card__total">${formatted}</div>`
+        );
+      }
       if (!meta_el.length) {
         $card.find(".pos-table-card__name").after(
           `<div class="pos-table-card__meta">${__("Occupied")}</div>`
@@ -89,6 +108,7 @@ awesome_restaurant3.TableSelector = class {
       }
     } else {
       meta_el.remove();
+      total_el.remove();
       if (!status_el.length) {
         $card.find(".pos-table-card__name").after(
           '<div class="pos-table-card__status">' + __("Free") + "</div>"

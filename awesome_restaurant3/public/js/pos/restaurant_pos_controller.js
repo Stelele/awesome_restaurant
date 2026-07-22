@@ -49,7 +49,7 @@ class RestaurantPosController extends erpnext.PointOfSale.Controller {
   async load_table_grid() {
     const tables = await frappe.db.get_list("POS Table", {
       filters: [["POS Table Profile", "pos_profile", "=", this.pos_profile]],
-      fields: ["name", "table_number", "status", "current_invoice", "current_invoice_doctype", "modified"],
+      fields: ["name", "table_number", "status", "current_invoice", "current_invoice_doctype", "current_total", "current_item_count", "occupied_at", "modified"],
       order_by: "table_number",
     });
 
@@ -88,7 +88,7 @@ class RestaurantPosController extends erpnext.PointOfSale.Controller {
   async select_table(table_number) {
     const docs = await frappe.db.get_list("POS Table", {
       filters: { table_number },
-      fields: ["name", "table_number", "status", "current_invoice", "current_invoice_doctype"],
+      fields: ["name", "table_number", "status", "current_invoice", "current_invoice_doctype", "occupied_at"],
     });
     const table = docs[0];
     if (!table) return;
@@ -110,6 +110,7 @@ class RestaurantPosController extends erpnext.PointOfSale.Controller {
       status: "Occupied",
       current_invoice: null,
       current_invoice_doctype: null,
+      occupied_at: frappe.datetime.now_datetime(),
     });
     this.toggle_components(true);
   }
@@ -168,6 +169,9 @@ class RestaurantPosController extends erpnext.PointOfSale.Controller {
       status: "Free",
       current_invoice: null,
       current_invoice_doctype: null,
+      current_total: 0,
+      current_item_count: 0,
+      occupied_at: null,
     });
 
     if (this.current_table_doc?.table_number === table_number) {
@@ -205,6 +209,9 @@ class RestaurantPosController extends erpnext.PointOfSale.Controller {
         status: "Free",
         current_invoice: null,
         current_invoice_doctype: null,
+        current_total: 0,
+        current_item_count: 0,
+        occupied_at: null,
       });
       if (!this.frm.doc.__islocal) {
         try { await frappe.db.delete_doc(this.frm.doc.doctype, this.frm.doc.name); } catch (e) {}
@@ -216,10 +223,16 @@ class RestaurantPosController extends erpnext.PointOfSale.Controller {
       await this.frm.save(null, null, null, () => (save_error = true));
       if (save_error) return;
     }
+    const occupied_at = this.current_table_doc.occupied_at
+      ? this.current_table_doc.occupied_at
+      : frappe.datetime.now_datetime();
     await frappe.db.set_value("POS Table", this.current_table_doc.name, {
       status: "Occupied",
       current_invoice: this.frm.doc.name,
       current_invoice_doctype: this.settings.frm_doctype,
+      current_total: this.frm.doc.grand_total,
+      current_item_count: this.frm.doc.items?.length || 0,
+      occupied_at: occupied_at,
     });
     await this._navigate_to_grid();
   }
@@ -262,6 +275,9 @@ class RestaurantPosController extends erpnext.PointOfSale.Controller {
           status: "Free",
           current_invoice: null,
           current_invoice_doctype: null,
+          current_total: 0,
+          current_item_count: 0,
+          occupied_at: null,
         });
       }
       this.current_table_doc = null;
