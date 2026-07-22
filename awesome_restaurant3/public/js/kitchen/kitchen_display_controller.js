@@ -129,6 +129,7 @@ class KitchenDisplayController {
 				args: { invoice_name },
 			});
 			if (!this.active) return;
+			this.queue.mark_card_ready(invoice_name);
 			frappe.show_alert({ message: __("Order marked Ready"), indicator: "green" });
 		} catch (err) {
 			if (!this.active) return;

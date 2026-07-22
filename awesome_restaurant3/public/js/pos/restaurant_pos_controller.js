@@ -59,6 +59,23 @@ class RestaurantPosController extends erpnext.PointOfSale.Controller {
       return numA - numB;
     });
 
+    const invoice_names = tables.filter((t) => t.current_invoice).map((t) => t.current_invoice);
+    if (invoice_names.length) {
+      const invoice_statuses = await frappe.db.get_list("POS Invoice", {
+        filters: { name: ["in", invoice_names] },
+        fields: ["name", "kitchen_status"],
+      });
+      const status_map = {};
+      invoice_statuses.forEach((inv) => {
+        status_map[inv.name] = inv.kitchen_status;
+      });
+      tables.forEach((t) => {
+        if (t.current_invoice) {
+          t.kitchen_status = status_map[t.current_invoice] || "";
+        }
+      });
+    }
+
     this.toggle_components(false);
 
     if (this.table_selector) {

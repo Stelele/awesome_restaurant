@@ -61,7 +61,7 @@ awesome_restaurant3.OrderQueue = class {
 			: "";
 
 		return `
-			<div class="kitchen-card ${badge_class}">
+			<div class="kitchen-card ${badge_class}" data-invoice="${CSS.escape(order.name)}">
 				<div class="kitchen-card__header">
 					<div class="kitchen-card__table">${frappe.utils.escape_html(order.restaurant_table)}</div>
 					<div class="kitchen-card__badges">
@@ -78,6 +78,16 @@ awesome_restaurant3.OrderQueue = class {
 				</div>
 			</div>
 		`;
+	}
+
+	mark_card_ready(invoice_name) {
+		const $card = this.$wrapper.find(`.kitchen-card[data-invoice="${CSS.escape(invoice_name)}"]`);
+		if (!$card.length) return;
+
+		$card.removeClass("kitchen-card--new kitchen-card--received kitchen-card--late")
+			.addClass("kitchen-card--ready");
+		$card.find(".kitchen-card__badge--status").text(__("READY")).addClass("kitchen-card__badge--ready");
+		$card.find(".kitchen-card__ready-btn").remove();
 	}
 
 	_minutes_since(datetime_str) {

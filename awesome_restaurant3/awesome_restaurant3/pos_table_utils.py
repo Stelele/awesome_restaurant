@@ -94,10 +94,27 @@ def mark_order_ready(invoice_name):
 	# Atomic update to avoid TOCTOU race
 	frappe.db.set_value("POS Invoice", invoice_name, "kitchen_status", "Ready")
 
-	frappe.get_doc("POS Invoice", invoice_name).add_comment(
+	invoice = frappe.get_cached_doc("POS Invoice", invoice_name)
+	invoice.add_comment(
 		"Comment",
 		"Order marked Ready by {0}".format(frappe.session.user),
 	)
+
+	if invoice.restaurant_table:
+		table_doc = frappe.get_cached_doc("POS Table", invoice.restaurant_table)
+		frappe.publish_realtime(
+			"pos_table_update",
+			{
+				"table_number": table_doc.table_number,
+				"status": table_doc.status,
+				"current_invoice": table_doc.current_invoice,
+				"current_invoice_doctype": table_doc.current_invoice_doctype,
+				"current_total": table_doc.current_total,
+				"current_item_count": table_doc.current_item_count,
+				"occupied_at": str(table_doc.occupied_at) if table_doc.occupied_at else None,
+				"kitchen_status": "Ready",
+			},
+		)
 
 	return {"kitchen_status": "Ready"}
 

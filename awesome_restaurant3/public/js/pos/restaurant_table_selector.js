@@ -40,10 +40,16 @@ awesome_restaurant3.TableSelector = class {
         ? __("{0} items", [table.current_item_count])
         : "";
 
+      const is_ready = is_occupied && table.kitchen_status === "Ready";
+      const status_badge = is_ready
+        ? `<span class="pos-table-card__ready-badge">${__("Ready")}</span>`
+        : "";
+
       const card_html = `
-        <div class="pos-table-card ${status_class}" data-table="${table_number}">
+        <div class="pos-table-card ${status_class} ${is_ready ? "pos-table-card--ready" : ""}" data-table="${table_number}">
           ${is_occupied ? '<span class="pos-table-card__clear">&times;</span>' : ""}
           <div class="pos-table-card__name">${table_number}</div>
+          ${status_badge}
           ${is_occupied && total
             ? `<div class="pos-table-card__total">${total}</div>`
             : ""}
@@ -106,9 +112,20 @@ awesome_restaurant3.TableSelector = class {
           `<div class="pos-table-card__meta">${__("Occupied")}</div>`
         );
       }
+      const is_ready = data.kitchen_status === "Ready";
+      $card.toggleClass("pos-table-card--ready", is_ready);
+      let ready_badge = $card.find(".pos-table-card__ready-badge");
+      if (is_ready && !ready_badge.length) {
+        ready_badge = $(`<span class="pos-table-card__ready-badge">${__("Ready")}</span>`);
+        $card.find(".pos-table-card__name").after(ready_badge);
+      } else if (!is_ready) {
+        ready_badge.remove();
+      }
     } else {
       meta_el.remove();
       total_el.remove();
+      $card.removeClass("pos-table-card--ready");
+      $card.find(".pos-table-card__ready-badge").remove();
       if (!status_el.length) {
         $card.find(".pos-table-card__name").after(
           '<div class="pos-table-card__status">' + __("Free") + "</div>"
