@@ -74,12 +74,15 @@ class RestaurantPosController extends erpnext.PointOfSale.Controller {
       orig_toggle(show);
       if (this._is_order_locked()) {
         const $cc = this.cart.$component.closest(".customer-cart-container");
+        const $row = this.cart.$totals_section.find(".action-btns-row");
         if (show) {
           $cc.css({ "grid-column": "", "width": "" });
+          $row.hide();
         } else {
           this.item_selector.toggle_component(false);
           this.cart.disable_customer_selection();
           $cc.css({ "grid-column": "3 / 9", "width": "100%" });
+          $row.show();
         }
       }
     };
@@ -163,6 +166,7 @@ class RestaurantPosController extends erpnext.PointOfSale.Controller {
         "width": "100%",
       });
       this.cart.disable_customer_selection();
+      this._add_print_bill_button();
       if (!this.cart._orig_update_customer_section) {
         this.cart._orig_update_customer_section = this.cart.update_customer_section.bind(this.cart);
         this.cart.update_customer_section = () => {
@@ -191,6 +195,7 @@ class RestaurantPosController extends erpnext.PointOfSale.Controller {
         "grid-column": "",
         "width": "",
       });
+      this._remove_print_bill_button();
       if (this.cart._orig_update_customer_section) {
         this.cart.update_customer_section = this.cart._orig_update_customer_section;
         this.cart._orig_update_customer_section = null;
@@ -200,6 +205,52 @@ class RestaurantPosController extends erpnext.PointOfSale.Controller {
         this.cart._orig_highlight_checkout_btn = null;
       }
     }
+  }
+
+  _add_print_bill_button() {
+    const $totals = this.cart.$totals_section;
+    if ($totals.find(".print-bill-btn").length) return;
+    const $checkout = $totals.find(".checkout-btn");
+    if (!$checkout.length) return;
+    const $printBtn = $(`<div class="print-bill-btn" style="display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:7px;font-size:16px;font-weight:700;cursor:pointer;border-radius:var(--border-radius-md, 6px);background:#6b7280;color:#fff;flex:1">
+      <svg class="icon icon-md"><use href="#icon-printer"></use></svg>Print Bill
+    </div>`).on("click", () => {
+      if (!this.frm) return;
+      const params = new URLSearchParams({
+        doctype: this.frm.doc.doctype,
+        name: this.frm.doc.name,
+        format: this.frm.pos_print_format || "",
+        no_letterhead: this.frm.doc.letter_head ? "0" : "1",
+        _lang: this.frm.doc.language || frappe.boot.lang,
+      });
+      if (this.frm.doc.letter_head) {
+        params.set("letterhead", this.frm.doc.letter_head);
+      }
+      const $iframe = $("<iframe>", {
+        src: "/printview?" + params.toString(),
+        style: "position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;opacity:0;pointer-events:none",
+      });
+      $iframe.on("load", function () {
+        setTimeout(() => {
+          try { this.contentWindow.print(); } catch (e) {}
+        }, 500);
+        setTimeout(() => $iframe.remove(), 30000);
+      });
+      $(document.body).append($iframe);
+    });
+    const $row = $('<div class="action-btns-row" style="display:flex;gap:8px;width:100%"></div>');
+    $checkout.before($row);
+    $row.append($printBtn, $checkout);
+    $checkout.css({ flex: "1", "border-radius": "var(--border-radius-md, 6px)" });
+  }
+
+  _remove_print_bill_button() {
+    const $row = this.cart.$totals_section.find(".action-btns-row");
+    if (!$row.length) return;
+    const $checkout = $row.find(".checkout-btn");
+    $row.before($checkout);
+    $row.remove();
+    $checkout.css({ flex: "", "border-radius": "" });
   }
 
   async select_table(table_number) {
