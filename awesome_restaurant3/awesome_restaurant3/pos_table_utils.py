@@ -73,8 +73,13 @@ def send_order_to_kitchen(invoice_name):
 	if not doc.items:
 		frappe.throw("Cannot send an empty order to kitchen.")
 
+	now = frappe.utils.now_datetime()
+	for item in doc.items:
+		if not item.sent_to_kitchen_at:
+			item.sent_to_kitchen_at = now
 	doc.kitchen_status = "Received"
-	doc.sent_to_kitchen_at = frappe.utils.now_datetime()
+	if not doc.sent_to_kitchen_at:
+		doc.sent_to_kitchen_at = now
 	doc.save(ignore_permissions=True)
 
 	doc.add_comment(
@@ -129,7 +134,8 @@ def get_kitchen_orders():
 			si.sent_to_kitchen_at,
 			si.modified,
 			sii.item_name,
-			sii.qty
+			sii.qty,
+			sii.sent_to_kitchen_at AS item_sent_at
 		FROM `tabPOS Invoice` si
 		LEFT JOIN `tabPOS Invoice Item` sii ON sii.parent = si.name
 		WHERE si.kitchen_status = 'Received'
@@ -153,9 +159,12 @@ def get_kitchen_orders():
 					and row.modified > row.sent_to_kitchen_at
 				),
 			}
+
+		is_new = row.item_sent_at is None
 		orders[row.name]["items"].append({
 			"item_name": row.item_name,
 			"qty": row.qty,
+			"is_new": is_new,
 		})
 
 	return list(orders.values())

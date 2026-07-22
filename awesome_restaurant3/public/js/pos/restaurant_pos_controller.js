@@ -125,7 +125,9 @@ class RestaurantPosController extends erpnext.PointOfSale.Controller {
         table.current_invoice,
         "kitchen_status"
       );
-      if (kstatus?.kitchen_status === "Received") {
+      const ks = kstatus?.message?.kitchen_status || "";
+      this.current_table_doc._kitchen_status = ks;
+      if (ks === "Received" || ks === "Ready") {
         this.current_table_doc._kitchen_sent = true;
       }
     }
@@ -287,9 +289,15 @@ class RestaurantPosController extends erpnext.PointOfSale.Controller {
     this.remove_table_badge();
     const table = this.current_table_doc?.table_number || "";
     const already_sent = this.current_table_doc?._kitchen_sent;
-    const action_html = already_sent
-      ? `<span class="pos-table-badge__sent-label">${__("Order Sent")}</span>`
-      : `<button class="btn btn-primary btn-sm pos-table-badge__send-btn" id="pos-send-kitchen-btn" style="margin-left:auto;background-color:#2490ef;color:#fff">${__("Send to Kitchen")}</button>`;
+    const is_ready = this.current_table_doc?._kitchen_status === "Ready";
+    let action_html;
+    if (is_ready) {
+      action_html = `<span class="pos-table-badge__sent-label pos-table-badge__sent-label--ready">${__("Order Ready")}</span>`;
+    } else if (already_sent) {
+      action_html = `<span class="pos-table-badge__sent-label">${__("Order Sent")}</span>`;
+    } else {
+      action_html = `<button class="btn btn-primary btn-sm pos-table-badge__send-btn" id="pos-send-kitchen-btn" style="margin-left:auto;background-color:#2490ef;color:#fff">${__("Send to Kitchen")}</button>`;
+    }
     const html = `
       <div class="pos-table-badge" id="pos-table-badge">
         <span class="pos-table-badge__arrow">&larr;</span>
@@ -338,6 +346,8 @@ class RestaurantPosController extends erpnext.PointOfSale.Controller {
       });
       if (this.current_table_doc) {
         this.current_table_doc._kitchen_sent = true;
+        this.current_table_doc._kitchen_status = "Received";
+        this.render_table_badge();
         await frappe.db.set_value("POS Table", this.current_table_doc.name, {
           current_invoice: this.frm.doc.name,
           current_invoice_doctype: this.frm.doctype,
@@ -380,6 +390,27 @@ class RestaurantPosController extends erpnext.PointOfSale.Controller {
       this.remove_table_badge();
     }
     super.toggle_submitted_invoice_summary(show);
+  }
+
+  async on_cart_update(args) {
+    if (super.on_cart_update) {
+      await super.on_cart_update(args);
+    }
+    this._reset_kitchen_sent();
+  }
+
+  remove_item_from_cart() {
+    if (super.remove_item_from_cart) {
+      super.remove_item_from_cart();
+    }
+    this._reset_kitchen_sent();
+  }
+
+  _reset_kitchen_sent() {
+    if (this.current_table_doc?._kitchen_sent) {
+      this.current_table_doc._kitchen_sent = false;
+      this.render_table_badge();
+    }
   }
 
   close_pos() {

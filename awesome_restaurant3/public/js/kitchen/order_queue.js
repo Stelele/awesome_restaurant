@@ -49,9 +49,10 @@ awesome_restaurant3.OrderQueue = class {
 
 		const items_html = (order.items || [])
 			.map((item) => `
-				<div class="kitchen-item">
+				<div class="kitchen-item ${item.is_new ? "kitchen-item--new" : ""}">
 					<span class="kitchen-item__name">${frappe.utils.escape_html(item.item_name)}</span>
 					<span class="kitchen-item__qty">x${item.qty}</span>
+					${item.is_new ? `<span class="kitchen-item__new-badge">${__("NEW")}</span>` : ""}
 				</div>
 			`)
 			.join("");

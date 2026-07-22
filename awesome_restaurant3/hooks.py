@@ -168,6 +168,15 @@ custom_fields = {
 			"read_only": 1,
 		},
 	],
+	"POS Invoice Item": [
+		{
+			"fieldname": "sent_to_kitchen_at",
+			"label": "Sent to Kitchen At",
+			"fieldtype": "Datetime",
+			"allow_on_submit": 1,
+			"read_only": 1,
+		},
+	],
 	"Sales Invoice": [
 		{
 			"fieldname": "restaurant_table",
