@@ -25,7 +25,10 @@ app_license = "mit"
 # ------------------
 
 # include js, css files in header of desk.html
-app_include_css = "/assets/awesome_restaurant3/css/pos_table.css"
+app_include_css = [
+	"/assets/awesome_restaurant3/css/pos_table.css",
+	"/assets/awesome_restaurant3/css/kitchen_display.css",
+]
 # app_include_js = "/assets/awesome_restaurant3/js/awesome_restaurant3.js"
 
 # include js, css files in header of web template
@@ -40,7 +43,10 @@ app_include_css = "/assets/awesome_restaurant3/css/pos_table.css"
 # webform_include_css = {"doctype": "public/css/doctype.css"}
 
 # include js in page
-page_js = {"point-of-sale": "public/js/pos/restaurant_pos.js"}
+page_js = {
+	"point-of-sale": "public/js/pos/restaurant_pos.js",
+	"kitchen-display": "public/js/kitchen/kitchen_display.js",
+}
 
 # include js in doctype views
 # doctype_js = {"doctype" : "public/js/doctype.js"}
@@ -143,7 +149,24 @@ custom_fields = {
 			"label": "Restaurant Table",
 			"fieldtype": "Data",
 			"insert_after": "pos_profile",
-		}
+		},
+		{
+			"fieldname": "kitchen_status",
+			"label": "Kitchen Status",
+			"fieldtype": "Select",
+			"options": "\nReceived\nReady",
+			"insert_after": "restaurant_table",
+			"allow_on_submit": 1,
+			"read_only": 1,
+		},
+		{
+			"fieldname": "sent_to_kitchen_at",
+			"label": "Sent to Kitchen At",
+			"fieldtype": "Datetime",
+			"insert_after": "kitchen_status",
+			"allow_on_submit": 1,
+			"read_only": 1,
+		},
 	],
 	"Sales Invoice": [
 		{
@@ -160,12 +183,15 @@ custom_fields = {
 # Hook on document methods and events
 
 doc_events = {
-    "POS Closing Entry": {
-        "on_submit": "awesome_restaurant3.awesome_restaurant3.pos_table_utils.free_tables_if_all_sessions_closed"
-    },
-    "POS Table": {
-        "on_update": "awesome_restaurant3.awesome_restaurant3.pos_table_utils.broadcast_table_update"
-    }
+	"POS Closing Entry": {
+		"on_submit": "awesome_restaurant3.awesome_restaurant3.pos_table_utils.free_tables_if_all_sessions_closed"
+	},
+	"POS Table": {
+		"on_update": "awesome_restaurant3.awesome_restaurant3.pos_table_utils.broadcast_table_update"
+	},
+	"POS Invoice": {
+		"on_update": "awesome_restaurant3.awesome_restaurant3.pos_table_utils.broadcast_kitchen_update"
+	},
 }
 
 # Scheduled Tasks

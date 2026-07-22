@@ -100,6 +100,19 @@ class RestaurantPosController extends erpnext.PointOfSale.Controller {
     if (!table) return;
 
     this.current_table_doc = table;
+    this.current_table_doc._kitchen_sent = false;
+
+    if (table.current_invoice && table.current_invoice_doctype) {
+      const kstatus = await frappe.db.get_value(
+        table.current_invoice_doctype,
+        table.current_invoice,
+        "kitchen_status"
+      );
+      if (kstatus?.kitchen_status === "Received") {
+        this.current_table_doc._kitchen_sent = true;
+      }
+    }
+
     this.table_selector.hide();
     this.render_table_badge();
 
@@ -256,15 +269,69 @@ class RestaurantPosController extends erpnext.PointOfSale.Controller {
   render_table_badge() {
     this.remove_table_badge();
     const table = this.current_table_doc?.table_number || "";
+    const already_sent = this.current_table_doc?._kitchen_sent;
+    const action_html = already_sent
+      ? `<span class="pos-table-badge__sent-label">${__("Order Sent")}</span>`
+      : `<button class="btn btn-primary btn-sm pos-table-badge__send-btn" id="pos-send-kitchen-btn" style="margin-left:auto;background-color:#2490ef;color:#fff">${__("Send to Kitchen")}</button>`;
     const html = `
       <div class="pos-table-badge" id="pos-table-badge">
         <span class="pos-table-badge__arrow">&larr;</span>
         <span class="pos-table-badge__label">${table}</span>
+        ${action_html}
       </div>`;
-    this.$table_badge = $(html)
-      .on("click", () => this.go_back_to_tables());
+    this.$table_badge = $(html);
+
     this.$components_wrapper.prepend(this.$table_badge);
+
+    this.$table_badge.on("click", (e) => {
+      if ($(e.target).is("#pos-send-kitchen-btn") || $(e.target).closest("#pos-send-kitchen-btn").length) {
+        this.send_to_kitchen();
+      } else {
+        this.go_back_to_tables();
+      }
+    });
+
     this._fix_table_grid_css();
+  }
+
+  async send_to_kitchen() {
+    if (!this.frm || !this.frm.doc.name) {
+      frappe.show_alert({ message: __("No active order to send"), indicator: "orange" });
+      return;
+    }
+
+    if (!this.frm.doc.items || this.frm.doc.items.length === 0) {
+      frappe.show_alert({ message: __("Cannot send empty order"), indicator: "orange" });
+      return;
+    }
+
+    if (this.frm.is_dirty() || this.frm.is_new()) {
+      let save_error = false;
+      await this.frm.save(null, null, null, () => (save_error = true));
+      if (save_error) {
+        frappe.show_alert({ message: __("Failed to save order"), indicator: "red" });
+        return;
+      }
+    }
+
+    try {
+      await frappe.call({
+        method: "awesome_restaurant3.awesome_restaurant3.pos_table_utils.send_order_to_kitchen",
+        args: { invoice_name: this.frm.doc.name },
+      });
+      if (this.current_table_doc) {
+        this.current_table_doc._kitchen_sent = true;
+      }
+      frappe.show_alert({
+        message: __("Order sent to kitchen"),
+        indicator: "green",
+      });
+      if (this.table_selector && this.current_table_doc) {
+        this.table_selector.mark_kitchen_sent(this.current_table_doc.table_number);
+      }
+    } catch (err) {
+      frappe.show_alert({ message: __("Failed to send order"), indicator: "red" });
+    }
   }
 
   remove_table_badge() {

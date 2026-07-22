@@ -139,6 +139,17 @@ awesome_restaurant3.TableSelector = class {
     return __("{0}h ago", [hours]);
   }
 
+  mark_kitchen_sent(table_number) {
+    const $card = this.$card_map[table_number];
+    if (!$card) return;
+
+    let badge = $card.find(".pos-table-card__kitchen-badge");
+    if (!badge.length) {
+      badge = $(`<span class="pos-table-card__kitchen-badge">${__("Sent")}</span>`);
+      $card.find(".pos-table-card__name").after(badge);
+    }
+  }
+
   refresh(tables) {
     this.tables = tables || this.tables;
     this.render_grid();

@@ -1,0 +1,23 @@
+{
+ "content": null,
+ "creation": "2026-07-22 18:38:12.543619",
+ "docstatus": 0,
+ "doctype": "Page",
+ "idx": 0,
+ "modified": "2026-07-22 18:38:12.543619",
+ "modified_by": "Administrator",
+ "module": "Awesome Restaurant3",
+ "name": "kitchen-display",
+ "owner": "Administrator",
+ "page_name": "kitchen-display",
+ "roles": [
+  {
+   "role": "System Manager"
+  }
+ ],
+ "script": null,
+ "standard": "Yes",
+ "style": null,
+ "system_page": 0,
+ "title": "Kitchen Display"
+}
