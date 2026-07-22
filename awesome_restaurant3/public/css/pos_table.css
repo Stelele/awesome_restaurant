@@ -228,3 +228,9 @@
   color: #6366f1;
 }
 
+.pos-order-locked .add-discount-wrapper,
+.pos-order-locked .reset-customer-btn {
+  display: none !important;
+}
+
+

@@ -17,6 +17,18 @@ class RestaurantPosController extends erpnext.PointOfSale.Controller {
   init_item_cart() {
     super.init_item_cart();
     this.cart.events.get_frm = () => this.frm || { doc: { items: [], currency: "" } };
+    this.cart.events.cart_item_clicked = (item) => {
+      if (this._is_order_locked()) return;
+      const item_row = this.get_item_from_frm(item);
+      this.item_details.toggle_item_details_section(item_row);
+    };
+    const orig_edit_cart = this.cart.events.edit_cart;
+    this.cart.events.edit_cart = () => {
+      orig_edit_cart();
+      if (this._is_order_locked()) {
+        setTimeout(() => this.cart.disable_customer_selection(), 0);
+      }
+    };
   }
 
   init_order_summary() {
@@ -37,13 +49,40 @@ class RestaurantPosController extends erpnext.PointOfSale.Controller {
       pos_profile: this.pos_profile,
       settings: this.settings,
       events: {
-        item_selected: (args) => this.on_cart_update(args),
+        item_selected: (args) => {
+          if (this._is_order_locked()) {
+            frappe.show_alert({
+              message: __("Order is ready for payment. Cannot modify items."),
+              indicator: "orange",
+            });
+            return;
+          }
+          this.on_cart_update(args);
+        },
         get_frm: () => this.frm || { doc: {} },
       },
     });
     if (this.settings?.selling_price_list) {
       this.item_selector.price_list = this.settings.selling_price_list;
     }
+  }
+
+  init_payments() {
+    super.init_payments();
+    const orig_toggle = this.payment.events.toggle_other_sections;
+    this.payment.events.toggle_other_sections = (show) => {
+      orig_toggle(show);
+      if (this._is_order_locked()) {
+        const $cc = this.cart.$component.closest(".customer-cart-container");
+        if (show) {
+          $cc.css({ "grid-column": "", "width": "" });
+        } else {
+          this.item_selector.toggle_component(false);
+          this.cart.disable_customer_selection();
+          $cc.css({ "grid-column": "3 / 9", "width": "100%" });
+        }
+      }
+    };
   }
 
   async load_table_grid() {
@@ -108,6 +147,61 @@ class RestaurantPosController extends erpnext.PointOfSale.Controller {
       .remove();
   }
 
+  _is_order_locked() {
+    return this.current_table_doc?._kitchen_status === "Ready";
+  }
+
+  _apply_ready_lock() {
+    if (this.item_selector) {
+      this.item_selector.toggle_component(false);
+    }
+    if (this.cart) {
+      this.cart.toggle_numpad(false);
+      this.cart.$component.addClass("pos-order-locked");
+      this.cart.$component.closest(".customer-cart-container").css({
+        "grid-column": "3 / 9",
+        "width": "100%",
+      });
+      this.cart.disable_customer_selection();
+      if (!this.cart._orig_update_customer_section) {
+        this.cart._orig_update_customer_section = this.cart.update_customer_section.bind(this.cart);
+        this.cart.update_customer_section = () => {
+          this.cart._orig_update_customer_section();
+          if (this._is_order_locked()) {
+            this.cart.disable_customer_selection();
+          }
+        };
+      }
+      if (!this.cart._orig_highlight_checkout_btn) {
+        this.cart._orig_highlight_checkout_btn = this.cart.highlight_checkout_btn.bind(this.cart);
+        this.cart.highlight_checkout_btn = (toggle) => {
+          this.cart._orig_highlight_checkout_btn(toggle);
+          if (this._is_order_locked()) {
+            this.cart.$add_discount_elem.css("display", "none");
+          }
+        };
+      }
+    }
+  }
+
+  _remove_ready_lock() {
+    if (this.cart) {
+      this.cart.$component.removeClass("pos-order-locked");
+      this.cart.$component.closest(".customer-cart-container").css({
+        "grid-column": "",
+        "width": "",
+      });
+      if (this.cart._orig_update_customer_section) {
+        this.cart.update_customer_section = this.cart._orig_update_customer_section;
+        this.cart._orig_update_customer_section = null;
+      }
+      if (this.cart._orig_highlight_checkout_btn) {
+        this.cart.highlight_checkout_btn = this.cart._orig_highlight_checkout_btn;
+        this.cart._orig_highlight_checkout_btn = null;
+      }
+    }
+  }
+
   async select_table(table_number) {
     const docs = await frappe.db.get_list("POS Table", {
       filters: { table_number },
@@ -139,6 +233,9 @@ class RestaurantPosController extends erpnext.PointOfSale.Controller {
       const exists = await frappe.db.exists(table.current_invoice_doctype, table.current_invoice);
       if (exists) {
         await this.edit_table_draft(table.current_invoice, table.current_invoice_doctype, table_number);
+        if (this._is_order_locked()) {
+          this._apply_ready_lock();
+        }
         return;
       }
     }
@@ -213,6 +310,7 @@ class RestaurantPosController extends erpnext.PointOfSale.Controller {
     });
 
     if (this.current_table_doc?.table_number === table_number) {
+      this._remove_ready_lock();
       this.current_table_doc = null;
       this.frm = null;
       this.remove_table_badge();
@@ -276,6 +374,7 @@ class RestaurantPosController extends erpnext.PointOfSale.Controller {
   }
 
   async _navigate_to_grid() {
+    this._remove_ready_lock();
     this.current_table_doc = null;
     this.frm = null;
     this.remove_table_badge();
@@ -386,6 +485,7 @@ class RestaurantPosController extends erpnext.PointOfSale.Controller {
           occupied_at: null,
         });
       }
+      this._remove_ready_lock();
       this.current_table_doc = null;
       this.remove_table_badge();
     }
@@ -393,6 +493,13 @@ class RestaurantPosController extends erpnext.PointOfSale.Controller {
   }
 
   async on_cart_update(args) {
+    if (this._is_order_locked()) {
+      frappe.show_alert({
+        message: __("Order is ready for payment. Cannot modify items."),
+        indicator: "orange",
+      });
+      return;
+    }
     if (super.on_cart_update) {
       await super.on_cart_update(args);
     }
@@ -400,6 +507,13 @@ class RestaurantPosController extends erpnext.PointOfSale.Controller {
   }
 
   remove_item_from_cart() {
+    if (this._is_order_locked()) {
+      frappe.show_alert({
+        message: __("Order is ready for payment. Cannot modify items."),
+        indicator: "orange",
+      });
+      return;
+    }
     if (super.remove_item_from_cart) {
       super.remove_item_from_cart();
     }
