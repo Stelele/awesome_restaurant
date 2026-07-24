@@ -130,11 +130,14 @@ def get_kitchen_orders():
 	items_data = frappe.db.sql("""
 		SELECT
 			si.name,
+			si.pos_profile,
 			si.restaurant_table,
 			si.sent_to_kitchen_at,
 			si.modified,
+			sii.name AS item_row_name,
 			sii.item_name,
 			sii.qty,
+			sii.item_code,
 			sii.sent_to_kitchen_at AS item_sent_at
 		FROM `tabPOS Invoice` si
 		LEFT JOIN `tabPOS Invoice Item` sii ON sii.parent = si.name
@@ -145,8 +148,11 @@ def get_kitchen_orders():
 		ORDER BY si.sent_to_kitchen_at ASC
 	""", as_dict=True)
 
+	tip_codes = {}
 	orders = {}
 	for row in items_data:
+		if row.item_row_name is None:
+			continue
 		if row.name not in orders:
 			orders[row.name] = {
 				"name": row.name,
@@ -159,6 +165,13 @@ def get_kitchen_orders():
 					and row.modified > row.sent_to_kitchen_at
 				),
 			}
+			if row.pos_profile:
+				tip_codes[row.name] = frappe.db.get_value(
+					"POS Profile", row.pos_profile, "custom_tip_item"
+				) or ""
+
+		if tip_codes.get(row.name) == row.item_code:
+			continue
 
 		is_new = row.item_sent_at is None
 		orders[row.name]["items"].append({
@@ -168,3 +181,10 @@ def get_kitchen_orders():
 		})
 
 	return list(orders.values())
+
+
+@frappe.whitelist()
+def get_tip_item_code(pos_profile):
+	"""Return the tip item code configured on a POS Profile."""
+	value = frappe.db.get_value("POS Profile", pos_profile, "custom_tip_item")
+	return value or ""

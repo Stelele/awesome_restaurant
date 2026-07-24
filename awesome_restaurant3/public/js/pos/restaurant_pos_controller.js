@@ -29,6 +29,275 @@ class RestaurantPosController extends erpnext.PointOfSale.Controller {
         setTimeout(() => this.cart.disable_customer_selection(), 0);
       }
     };
+    this._init_tip_ui();
+  }
+
+  _init_tip_ui() {
+    const $totals = this.cart.$totals_section;
+    if (!$totals.length || $totals.find(".add-tip-wrapper").length) return;
+
+    this._tip_item_code = null;
+
+    $totals.find(".add-discount-wrapper").after(
+      `<div class="add-tip-wrapper" style="display:flex;align-items:center;gap:6px;padding:var(--padding-sm) var(--padding-md);border:1px dashed var(--gray-500);border-radius:var(--border-radius-md);cursor:pointer;margin-bottom:4px">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0">
+          <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+        </svg>
+        ${__("Add Tip")}
+      </div>
+      <div class="tip-amount-container" style="display:none;justify-content:space-between;padding:var(--padding-sm) var(--padding-md)">
+        <div>${__("Tip")}</div>
+        <div class="tip-amount-value">0.00</div>
+      </div>`
+    );
+
+    this.cart.$add_tip_elem = $totals.find(".add-tip-wrapper");
+    this.cart.$tip_amount_elem = $totals.find(".tip-amount-container");
+    this.cart.$tip_amount_value_elem = $totals.find(".tip-amount-value");
+
+    $totals.on("click", ".add-tip-wrapper", () => {
+      this._show_tip_dialog();
+    });
+
+    if (!this.cart._orig_update_item_html) {
+      this.cart._orig_update_item_html = this.cart.update_item_html.bind(this.cart);
+      this.cart.update_item_html = (item, remove_item) => {
+        this.cart._orig_update_item_html(item, remove_item);
+        const code = this._get_tip_item_code();
+        if (!code) return;
+        const $row = this.cart.get_cart_item(item);
+        if ($row.length) {
+          const item_row = this.cart.get_item_from_frm(item);
+          if (item_row && item_row.item_code === code) {
+            $row.addClass("tip-item");
+          } else {
+            $row.removeClass("tip-item");
+          }
+        }
+      };
+    }
+  }
+
+  _get_tip_item_code() {
+    return this._tip_item_code;
+  }
+
+  _load_tip_item_code() {
+    if (!this.frm || !this.frm.doc || !this.frm.doc.pos_profile) return;
+    frappe.xcall("awesome_restaurant3.awesome_restaurant3.pos_table_utils.get_tip_item_code", {
+      pos_profile: this.frm.doc.pos_profile,
+    }).then((code) => {
+      if (code) {
+        this._tip_item_code = code;
+        this._sync_tip_display();
+      }
+    });
+  }
+
+  _get_existing_tip_item() {
+    const code = this._get_tip_item_code();
+    if (!code || !this.frm) return null;
+    return (this.frm.doc.items || []).find((i) => i.item_code === code);
+  }
+
+  _show_tip_dialog() {
+    const me = this;
+    const currency = this.frm ? this.frm.doc.currency : frappe.sys_defaults.currency;
+    const precision = 2;
+
+    const existing = this._get_existing_tip_item();
+    const existing_amount = existing ? existing.rate : 0;
+
+    let numpad_value = existing_amount > 0
+      ? (existing_amount * (10 ** precision)).toFixed(0)
+      : "";
+
+    const dialog = new frappe.ui.Dialog({
+      title: __("Add Tip"),
+      size: "small",
+      primary_action_label: __("Done"),
+      primary_action() {
+        const amount = parseFloat(numpad_value || "0") / (10 ** precision);
+        me._add_tip_to_cart(amount);
+        this.hide();
+      },
+    });
+
+    dialog.$wrapper.addClass("tip-dialog");
+
+    const $body = dialog.$body;
+    $body.html(`
+      <div class="tip-dialog-display" style="text-align:center;padding:24px 0 16px">
+        <div class="tip-dialog-amount" style="font-size:36px;font-weight:700;color:var(--text-color)">
+          ${format_currency(0, currency)}
+        </div>
+      </div>
+      <div class="tip-dialog-numpad"></div>
+    `);
+
+    const $display = $body.find(".tip-dialog-amount");
+    const $numpad_wrapper = $body.find(".tip-dialog-numpad");
+
+    const update_display = () => {
+      const val = parseFloat(numpad_value || "0") / (10 ** precision);
+      $display.text(format_currency(val, currency));
+    };
+
+    const numpad = new erpnext.PointOfSale.NumberPad({
+      wrapper: $numpad_wrapper,
+      events: {
+        numpad_event($btn) {
+          const btn_val = $btn.attr("data-button-value");
+          if (btn_val === "delete" || btn_val === "Backspace") {
+            numpad_value = numpad_value.slice(0, -1);
+          } else if (btn_val === ".") {
+            if (!numpad_value.includes(".")) {
+              numpad_value = numpad_value || "0";
+              numpad_value += ".";
+            }
+          } else if (!isNaN(btn_val)) {
+            numpad_value += String(btn_val);
+          }
+          update_display();
+        },
+      },
+      cols: 3,
+      keys: [
+        [1, 2, 3],
+        [4, 5, 6],
+        [7, 8, 9],
+        [".", 0, "Delete"],
+      ],
+    });
+
+    dialog.show();
+    update_display();
+
+    $(document).on("keydown.tip_dialog", (e) => {
+      const key = e.key;
+      if (key === "Enter") {
+        e.preventDefault();
+        dialog.get_primary_btn().trigger("click");
+        return;
+      }
+      if (key === "Escape") {
+        dialog.hide();
+        return;
+      }
+      if (key === "Backspace" || key === "Delete") {
+        e.preventDefault();
+        numpad_value = numpad_value.slice(0, -1);
+        update_display();
+        return;
+      }
+      if (key === ".") {
+        e.preventDefault();
+        if (!numpad_value.includes(".")) {
+          numpad_value = numpad_value || "0";
+          numpad_value += ".";
+        }
+        update_display();
+        return;
+      }
+      if (/^[0-9]$/.test(key)) {
+        e.preventDefault();
+        numpad_value += key;
+        update_display();
+        return;
+      }
+    });
+
+    dialog.$wrapper.on("hidden.bs.modal", () => {
+      $(document).off("keydown.tip_dialog");
+    });
+  }
+
+  _add_tip_to_cart(amount) {
+    if (!this.frm) return;
+    amount = flt(amount);
+    const tip_item_code = this._get_tip_item_code();
+
+    if (!tip_item_code) {
+      frappe.show_alert({
+        message: __("Tip item not configured in POS Profile. Please set 'Tip Item' in the profile."),
+        indicator: "orange",
+      });
+      return;
+    }
+
+    const existing = this._get_existing_tip_item();
+
+    if (amount <= 0) {
+      if (existing) {
+        this._remove_tip(existing);
+      }
+      return;
+    }
+
+    frappe.dom.freeze();
+
+    const frm = this.frm;
+
+    if (existing) {
+      frappe.model.set_value(existing.doctype, existing.name, "rate", amount).then(() => {
+        frm.trigger("change");
+        this._update_tip_display(amount);
+        frappe.dom.unfreeze();
+      });
+    } else {
+      const item_row = frm.add_child("items", {
+        qty: 1,
+        warehouse: this.settings?.warehouse,
+        use_serial_batch_fields: 1,
+      });
+      frappe.model.set_value(item_row.doctype, item_row.name, "item_code", tip_item_code).then(() => {
+        return frappe.model.set_value(item_row.doctype, item_row.name, "item_name", "Tip");
+      }).then(() => {
+        return frappe.model.set_value(item_row.doctype, item_row.name, "rate", amount);
+      }).then(() => {
+        frm.trigger("change");
+        this._update_tip_display(amount);
+        frappe.dom.unfreeze();
+      });
+    }
+  }
+
+  _remove_tip(existing) {
+    if (!existing || !this.frm) return;
+    frappe.dom.freeze();
+    frappe.model.delete_doc(existing.doctype, existing.name, () => {
+      this.frm.trigger("change");
+      this._update_tip_display(0);
+      frappe.dom.unfreeze();
+    });
+  }
+
+  _update_tip_display(amount) {
+    amount = flt(amount);
+    if (this.frm) {
+      this.frm.set_value("custom_tip_amount", amount);
+    }
+    if (this.cart && this.cart.$tip_amount_elem) {
+      const currency = this.frm ? this.frm.doc.currency : frappe.sys_defaults.currency;
+      if (amount > 0) {
+        this.cart.$tip_amount_elem.css("display", "flex");
+        this.cart.$tip_amount_value_elem.text(format_currency(amount, currency));
+        this.cart.$add_tip_elem.css("display", "flex").html(
+          `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0">
+            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+          </svg>
+          ${__("Edit Tip")}`
+        );
+      } else {
+        this.cart.$tip_amount_elem.css("display", "none");
+        this.cart.$add_tip_elem.css("display", "flex").html(
+          `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0">
+            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+          </svg>
+          ${__("Add Tip")}`
+        );
+      }
+    }
   }
 
   init_order_summary() {
@@ -180,8 +449,8 @@ class RestaurantPosController extends erpnext.PointOfSale.Controller {
         this.cart._orig_highlight_checkout_btn = this.cart.highlight_checkout_btn.bind(this.cart);
         this.cart.highlight_checkout_btn = (toggle) => {
           this.cart._orig_highlight_checkout_btn(toggle);
-          if (this._is_order_locked()) {
-            this.cart.$add_discount_elem.css("display", "none");
+          if (this.cart.$add_tip_elem) {
+            this.cart.$add_tip_elem.css("display", toggle ? "flex" : "none");
           }
         };
       }
@@ -204,6 +473,7 @@ class RestaurantPosController extends erpnext.PointOfSale.Controller {
         this.cart.highlight_checkout_btn = this.cart._orig_highlight_checkout_btn;
         this.cart._orig_highlight_checkout_btn = null;
       }
+      this._sync_tip_display();
     }
   }
 
@@ -212,7 +482,7 @@ class RestaurantPosController extends erpnext.PointOfSale.Controller {
     if ($totals.find(".print-bill-btn").length) return;
     const $checkout = $totals.find(".checkout-btn");
     if (!$checkout.length) return;
-    const $printBtn = $(`<div class="print-bill-btn" style="display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:7px;font-size:16px;font-weight:700;cursor:pointer;border-radius:var(--border-radius-md, 6px);background:#6b7280;color:#fff;flex:1">
+    const $printBtn = $(`<div class="print-bill-btn primary-action">
       <svg class="icon icon-md"><use href="#icon-printer"></use></svg>Print Bill
     </div>`).on("click", () => {
       if (!this.frm) return;
@@ -238,19 +508,19 @@ class RestaurantPosController extends erpnext.PointOfSale.Controller {
       });
       $(document.body).append($iframe);
     });
-    const $row = $('<div class="action-btns-row" style="display:flex;gap:8px;width:100%"></div>');
+    const $row = $('<div class="action-btns-row"></div>');
     $checkout.before($row);
+    $checkout.addClass("primary-action");
     $row.append($printBtn, $checkout);
-    $checkout.css({ flex: "1", "border-radius": "var(--border-radius-md, 6px)" });
   }
 
   _remove_print_bill_button() {
     const $row = this.cart.$totals_section.find(".action-btns-row");
     if (!$row.length) return;
     const $checkout = $row.find(".checkout-btn");
+    $checkout.removeClass("primary-action");
     $row.before($checkout);
     $row.remove();
-    $checkout.css({ flex: "", "border-radius": "" });
   }
 
   async select_table(table_number) {
@@ -323,7 +593,10 @@ class RestaurantPosController extends erpnext.PointOfSale.Controller {
             });
           },
           () => this.cart.load_invoice(),
-          () => this.toggle_components(true),
+          () => {
+            this._load_tip_item_code();
+            this.toggle_components(true);
+          },
           () => resolve(),
         ]);
       });
@@ -376,6 +649,7 @@ class RestaurantPosController extends erpnext.PointOfSale.Controller {
       if (this.current_table_doc) {
         this.frm.doc.restaurant_table = this.current_table_doc.table_number;
       }
+      this._load_tip_item_code();
     });
   }
 
@@ -385,6 +659,13 @@ class RestaurantPosController extends erpnext.PointOfSale.Controller {
       return;
     }
     super.new_invoice_event();
+  }
+
+  _sync_tip_display() {
+    if (!this.frm || !this.cart) return;
+    const tip = this._get_existing_tip_item();
+    const amount = tip ? flt(tip.rate) : 0;
+    this._update_tip_display(amount);
   }
 
   async go_back_to_tables() {
@@ -565,8 +846,14 @@ class RestaurantPosController extends erpnext.PointOfSale.Controller {
       });
       return;
     }
+    const current = this.item_details?.current_item;
+    const was_tip = current && current.item_code === this._get_tip_item_code();
     if (super.remove_item_from_cart) {
       super.remove_item_from_cart();
+    }
+    if (was_tip) {
+      this._update_tip_display(0);
+      this._tip_item_code = null;
     }
     this._reset_kitchen_sent();
   }

@@ -233,4 +233,83 @@
   display: none !important;
 }
 
+.point-of-sale-app .cart-totals-section .action-btns-row {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+
+.point-of-sale-app .cart-totals-section .action-btns-row .checkout-btn,
+.point-of-sale-app .cart-totals-section .action-btns-row .print-bill-btn {
+  flex: 1;
+  margin-top: 0;
+}
+
+.point-of-sale-app .cart-totals-section .action-btns-row .print-bill-btn {
+  background-color: var(--control-bg);
+  gap: var(--gap-sm, 6px);
+  justify-content: flex-start;
+  padding-left: var(--padding-md);
+}
+
+.cart-item-wrapper.tip-item {
+  background: var(--bg-blue, #eef2ff);
+  border-left: 3px solid #6366f1;
+}
+
+.cart-item-wrapper.tip-item .item-name {
+  color: #6366f1;
+  font-weight: 600;
+}
+
+.cart-item-wrapper.tip-item .item-image.item-abbr {
+  background: #6366f1;
+  color: #fff;
+}
+
+.add-tip-wrapper:hover {
+  border-color: #6366f1 !important;
+  background: var(--bg-blue, #eef2ff);
+}
+
+.tip-amount-container {
+  border-top: 1px dashed var(--gray-300);
+  font-weight: 600;
+  color: #6366f1;
+}
+
+.tip-dialog .frappe-control {
+  margin-bottom: 0;
+}
+
+.tip-dialog .tip-dialog-numpad .numpad-container {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--margin-md);
+  margin-bottom: var(--margin-md);
+}
+
+.tip-dialog .tip-dialog-numpad .numpad-container .numpad-btn {
+  border-radius: var(--border-radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--padding-md);
+  box-shadow: var(--shadow-base);
+  cursor: pointer;
+  font-size: 18px;
+  font-weight: 600;
+  user-select: none;
+}
+
+.tip-dialog .tip-dialog-numpad .numpad-container .numpad-btn:hover {
+  background-color: var(--control-bg);
+}
+
+.tip-dialog .tip-dialog-numpad .numpad-container .numpad-btn[data-button-value="delete"],
+.tip-dialog .tip-dialog-numpad .numpad-container .numpad-btn[data-button-value="Backspace"] {
+  font-weight: 700;
+  color: var(--red-500);
+}
+
 

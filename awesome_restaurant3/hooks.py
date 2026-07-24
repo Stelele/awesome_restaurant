@@ -140,6 +140,10 @@ page_js = {
 # 	"Event": "frappe.desk.doctype.event.event.has_permission",
 # }
 
+# Fixtures
+# --------
+fixtures = ["Custom Field"]
+
 # Custom Fields
 # -------------
 custom_fields = {
@@ -151,11 +155,19 @@ custom_fields = {
 			"insert_after": "pos_profile",
 		},
 		{
+			"fieldname": "custom_tip_amount",
+			"label": "Tip Amount",
+			"fieldtype": "Currency",
+			"insert_after": "restaurant_table",
+			"read_only": 1,
+			"allow_on_submit": 1,
+		},
+		{
 			"fieldname": "kitchen_status",
 			"label": "Kitchen Status",
 			"fieldtype": "Select",
 			"options": "\nReceived\nReady",
-			"insert_after": "restaurant_table",
+			"insert_after": "custom_tip_amount",
 			"allow_on_submit": 1,
 			"read_only": 1,
 		},
@@ -184,6 +196,16 @@ custom_fields = {
 			"fieldtype": "Data",
 			"insert_after": "pos_profile",
 		}
+	],
+	"POS Profile": [
+		{
+			"fieldname": "custom_tip_item",
+			"label": "Tip Item",
+			"fieldtype": "Link",
+			"options": "Item",
+			"insert_after": "allow_discount_change",
+			"description": "Non-stock item used for adding tips to restaurant orders",
+		},
 	],
 }
 
