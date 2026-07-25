@@ -22,7 +22,7 @@ frappe.provide("awesome_restaurant3");
 						var _pos = wrapper.pos;
 
 						var _wait_for_profile = function () {
-							if (_pos.pos_profile && _pos.settings && _pos.settings.frm_doctype) {
+							if (_pos.pos_profile) {
 								_restaurant_setup_done = true;
 
 								if (typeof onScan !== "undefined" && onScan.detachFrom && onScan.isAttachedTo(document)) {

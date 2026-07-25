@@ -23,6 +23,7 @@ class RestaurantPosController extends erpnext.PointOfSale.Controller {
     });
     if (tables.length > 0) {
       this.table_mode = true;
+      this._init_tip_ui();
       await this.load_table_grid();
     } else {
       await this.make_new_invoice();
@@ -44,7 +45,6 @@ class RestaurantPosController extends erpnext.PointOfSale.Controller {
         setTimeout(() => this.cart.disable_customer_selection(), 0);
       }
     };
-    this._init_tip_ui();
   }
 
   _init_tip_ui() {
