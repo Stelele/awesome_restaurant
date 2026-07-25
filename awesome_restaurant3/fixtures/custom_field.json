@@ -61,6 +61,21 @@
     "translatable": 0
   },
   {
+    "allow_on_submit": 0,
+    "doctype": "Custom Field",
+    "dt": "POS Invoice",
+    "fieldname": "is_created_using_pos",
+    "name": "POS Invoice-is_created_using_pos",
+    "fieldtype": "Check",
+    "hidden": 1,
+    "insert_after": "is_pos",
+    "label": "Is Created Using POS",
+    "module": "Awesome Restaurant3",
+    "read_only": 1,
+    "reqd": 0,
+    "translatable": 0
+  },
+  {
     "allow_on_submit": 1,
     "doctype": "Custom Field",
     "dt": "POS Invoice Item",

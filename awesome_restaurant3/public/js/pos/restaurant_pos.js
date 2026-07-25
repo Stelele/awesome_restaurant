@@ -27,14 +27,6 @@ frappe.provide("awesome_restaurant3");
 							}
 							apps.forEach(function (el) { el.remove(); });
 
-							frappe.ui.make_app_page({
-								parent: wrapper,
-								title: __("Point of Sale"),
-								single_column: true,
-								hide_sidebar: true,
-							});
-							pos.page = wrapper.page;
-
 							pos.cart = null;
 							pos.item_selector = null;
 							pos.payment = null;

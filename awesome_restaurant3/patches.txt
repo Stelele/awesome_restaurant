@@ -6,3 +6,4 @@
 # Patches added in this section will be executed after doctypes are migrated
 awesome_restaurant3.awesome_restaurant3.patches.v1_0.ensure_all_custom_fields
 awesome_restaurant3.awesome_restaurant3.patches.v1_0.add_kitchen_fields_and_index
+awesome_restaurant3.awesome_restaurant3.patches.v1_0.add_is_created_using_pos_field

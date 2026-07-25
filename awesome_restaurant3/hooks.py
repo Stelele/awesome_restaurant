@@ -179,6 +179,14 @@ custom_fields = {
 			"allow_on_submit": 1,
 			"read_only": 1,
 		},
+		{
+			"fieldname": "is_created_using_pos",
+			"label": "Is Created Using POS",
+			"fieldtype": "Check",
+			"insert_after": "is_pos",
+			"hidden": 1,
+			"read_only": 1,
+		},
 	],
 	"POS Invoice Item": [
 		{
