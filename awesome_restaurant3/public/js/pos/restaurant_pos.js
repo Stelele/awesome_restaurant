@@ -48,20 +48,7 @@ frappe.provide("awesome_restaurant3");
 							pos._kitchen_sent = false;
 							pos._tip_item_code = null;
 
-							var proto = awesome_restaurant3.RestaurantPosController.prototype;
-							pos.init_item_selector = proto.init_item_selector;
-							pos.init_item_cart = proto.init_item_cart;
-							pos.init_item_details = proto.init_item_details;
-							pos.init_payments = proto.init_payments;
-							pos.init_order_summary = proto.init_order_summary;
-							pos.init_recent_order_list = proto.init_recent_order_list;
-							pos.make_app = proto.make_app;
-							pos.load_table_grid = proto.load_table_grid;
-							pos.select_table = proto.select_table;
-							pos.go_back_to_tables = proto.go_back_to_tables;
-							pos.render_table_badge = proto.render_table_badge;
-							pos.remove_table_badge = proto.remove_table_badge;
-							pos._fix_table_grid_css = proto._fix_table_grid_css;
+							Object.setPrototypeOf(pos, awesome_restaurant3.RestaurantPosController.prototype);
 
 							pos.make_app();
 						};
