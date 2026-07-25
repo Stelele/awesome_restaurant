@@ -84,6 +84,7 @@ frappe.pages["point-of-sale"].refresh = function (wrapper) {
 		onScan.detachFrom(document);
 	}
 	if (wrapper.pos) {
+		wrapper.pos._restaurant_make_app_done = false;
 		wrapper.pos.wrapper.html("");
 		wrapper.pos.check_opening_entry();
 	}
