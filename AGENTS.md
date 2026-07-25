@@ -275,3 +275,59 @@ Before deploying to Frappe Cloud, verify EVERY item:
 - Teardown order: POS Tables → Invoices (cancel first) → Opening Entries (cancel first) → Profiles → Stock Recos → Prices → Items → Customers → Warehouses
 - Use `list(frappe.get_all(...))` to avoid cursor issues when iterating and deleting
 - Infrastructure data (`_Test POS Profile`, `_Test Item`, `_Test POS Warehouse`, `Walk In Customer`) is created once via `get_or_create_*` and stays across runs
+
+## Frappe Cloud Parity Bench
+
+The local bench uses Frappe/ERPNext v17 develop — production is v16. To catch production-only bugs, maintain a separate v16 bench that mirrors the Frappe Cloud app install order exactly.
+
+### Setup
+
+```bash
+bench init ../frappe-bench-version-16 --frappe-branch version-16
+cd ../frappe-bench-version-16
+
+# Apps in Frappe Cloud install order (critical for page_js load sequence)
+bench get-app erpnext --branch version-16
+bench get-app https://github.com/Stelele/erpnext-point-of-sale-expenses --branch version-16
+bench get-app https://github.com/Stelele/awesome_dashboard_scripts --branch version-16
+bench get-app https://github.com/Stelele/awesome-butchery --branch version-16
+bench get-app https://github.com/Stelele/awesome_restaurant --branch version-16
+
+bench new-site development.localhost --admin-password admin
+
+# Install in Frappe Cloud order
+bench --site development.localhost install-app erpnext
+bench --site development.localhost install-app pos_expenses
+bench --site development.localhost install-app awesome_dashboard
+bench --site development.localhost install-app awesome_butchery
+bench --site development.localhost install-app awesome_restaurant3
+
+bench --site development.localhost set-config developer_mode 1
+```
+
+### Install Order Matters
+
+Frappe Cloud app order (from Apps page):
+1. Frappe Framework (v16.28.0)
+2. Builder
+3. Insights
+4. **ERPNext** (v16.29.0)
+5. Email Delivery Service
+6. Print Designer
+7. **Pos Expenses**
+8. **Awesome Dashboard**
+9. **Awesome Butchery**
+10. **Awesome Restaurant3**
+
+`page_js` for `point-of-sale` is set by ERPNext (`point_of_sale.js`), pos_expenses (`pos_extension.js`), and awesome_restaurant3 (`restaurant_pos.js`). These load in install order:
+- `point_of_sale.js` → `pos_extension.js` → `restaurant_pos.js`
+
+So `pos_extension.js` wraps `point_of_sale.js`, and `restaurant_pos.js` wraps `pos_extension.js`. This is the same order our code expects (saves `_orig_on_page_load`, delegates to pos_expenses first).
+
+### Testing in the Parity Bench
+
+- Set `developer_mode 0` to test production asset caching
+- Always test SPA navigation: POS Close → redirect (NOT full page reload)
+- Always test with `pos_expenses` AND `awesome_butchery` AND `awesome_dashboard` installed
+- Verify `Object.getOwnPropertyNames` on `erpnext.PointOfSale.Controller.prototype` includes `open_expense_modal` after on_page_load
+- Verify `typeof pos.open_expense_modal === 'function'` after setup
