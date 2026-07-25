@@ -9,6 +9,9 @@ class RestaurantPosController extends erpnext.PointOfSale.Controller {
   }
 
   async make_app() {
+    if (this._restaurant_make_app_done) return;
+    this._restaurant_make_app_done = true;
+
     this.prepare_dom();
     this.prepare_components();
     this.prepare_menu();
@@ -851,6 +854,11 @@ class RestaurantPosController extends erpnext.PointOfSale.Controller {
       await super.on_cart_update(args);
     }
     this._reset_kitchen_sent();
+  }
+
+  update_cart_html(item_row, remove_item) {
+    if (this._is_order_locked()) return;
+    super.update_cart_html(item_row, remove_item);
   }
 
   remove_item_from_cart() {

@@ -11,9 +11,9 @@ frappe.provide("awesome_restaurant3");
 				return _orig_require(items, function () {
 					_orig_require("restaurant_pos.bundle.js", function () {
 						var _restaurant_setup_done = false;
-						var _orig_make_pos = erpnext.PointOfSale.Controller.prototype.make;
+						var _orig_make_app = erpnext.PointOfSale.Controller.prototype.make_app;
 
-						erpnext.PointOfSale.Controller.prototype.make = function () {
+						erpnext.PointOfSale.Controller.prototype.make_app = function () {
 							if (_restaurant_setup_done) return;
 						};
 
@@ -22,7 +22,7 @@ frappe.provide("awesome_restaurant3");
 						var _pos = wrapper.pos;
 
 						var _wait_for_profile = function () {
-							if (_pos.pos_profile) {
+							if (_pos.pos_profile && _pos.settings && _pos.settings.frm_doctype) {
 								_restaurant_setup_done = true;
 
 								if (typeof onScan !== "undefined" && onScan.detachFrom && onScan.isAttachedTo(document)) {
@@ -42,11 +42,24 @@ frappe.provide("awesome_restaurant3");
 								_pos.table_mode = false;
 								_pos._kitchen_sent = false;
 								_pos._tip_item_code = null;
+								_pos._restaurant_make_app_done = false;
 
-								Object.setPrototypeOf(_pos, awesome_restaurant3.RestaurantPosController.prototype);
-								_pos.make_app();
+								Object.getOwnPropertyNames(awesome_restaurant3.RestaurantPosController.prototype).forEach(function (name) {
+									if (name !== "constructor" && typeof awesome_restaurant3.RestaurantPosController.prototype[name] === "function") {
+										_pos[name] = awesome_restaurant3.RestaurantPosController.prototype[name];
+									}
+								});
 
-								erpnext.PointOfSale.Controller.prototype.make = _orig_make_pos;
+								if (typeof _pos.open_expense_modal !== "function" && typeof erpnext.PointOfSale.Controller?.prototype?.open_expense_modal === "function") {
+									_pos.prepare_btns = erpnext.PointOfSale.Controller.prototype.prepare_btns;
+									_pos.open_expense_modal = erpnext.PointOfSale.Controller.prototype.open_expense_modal;
+									_pos.open_reprint_invoices_modal = erpnext.PointOfSale.Controller.prototype.open_reprint_invoices_modal;
+									_pos.open_refund_invoices_modal = erpnext.PointOfSale.Controller.prototype.open_refund_invoices_modal;
+								}
+
+								_pos.make_app().then(function () {
+									erpnext.PointOfSale.Controller.prototype.make_app = _orig_make_app;
+								});
 							} else {
 								setTimeout(_wait_for_profile, 50);
 							}
@@ -69,9 +82,6 @@ frappe.pages["point-of-sale"].refresh = function (wrapper) {
 		onScan.detachFrom(document);
 		wrapper.pos.wrapper.html("");
 		wrapper.pos.check_opening_entry();
-	}
-	if (wrapper.pos && wrapper.pos.table_mode && (!wrapper.pos.frm || wrapper.pos.frm.doc?.docstatus === 1)) {
-		wrapper.pos.load_table_grid();
 	}
 };
 
