@@ -10,10 +10,12 @@ frappe.provide("awesome_restaurant3");
 			if (items === "point-of-sale.bundle.js") {
 				return _orig_require(items, function () {
 					if (callback) callback();
-					wrapper.find(".point-of-sale-app").remove();
 					_orig_require("restaurant_pos.bundle.js", function () {
-						wrapper.pos = new awesome_restaurant3.RestaurantPosController(wrapper);
-						window.cur_pos = wrapper.pos;
+						setTimeout(function () {
+							document.querySelectorAll(".point-of-sale-app").forEach(function (el) { el.remove(); });
+							wrapper.pos = new awesome_restaurant3.RestaurantPosController(wrapper);
+							window.cur_pos = wrapper.pos;
+						}, 500);
 					});
 				});
 			}
