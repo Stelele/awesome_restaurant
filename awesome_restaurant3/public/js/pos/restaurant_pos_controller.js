@@ -1,4 +1,13 @@
 class RestaurantPosController extends erpnext.PointOfSale.Controller {
+  prepare_dom() {
+    if (this.wrapper.find(".point-of-sale-app").length) {
+      this.$components_wrapper = this.wrapper.find(".point-of-sale-app").first();
+      return;
+    }
+    this.wrapper.append(`<div class="point-of-sale-app"></div>`);
+    this.$components_wrapper = this.wrapper.find(".point-of-sale-app");
+  }
+
   async make_app() {
     this.prepare_dom();
     this.prepare_components();

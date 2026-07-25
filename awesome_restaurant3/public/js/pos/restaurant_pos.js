@@ -11,38 +11,47 @@ frappe.provide("awesome_restaurant3");
 				return _orig_require(items, function () {
 					_orig_require("restaurant_pos.bundle.js", function () {
 						var _restaurant_setup_done = false;
-
 						var _orig_make_pos = erpnext.PointOfSale.Controller.prototype.make;
+
 						erpnext.PointOfSale.Controller.prototype.make = function () {
 							if (_restaurant_setup_done) return;
 						};
 
 						if (callback) callback();
 
-						if (typeof onScan !== "undefined" && onScan.detachFrom && onScan.isAttachedTo(document)) {
-							try { onScan.detachFrom(document); } catch (e) {}
-						}
+						var _pos = wrapper.pos;
 
-						var pos = wrapper.pos;
-						pos.cart = null;
-						pos.item_selector = null;
-						pos.payment = null;
-						pos.item_details = null;
-						pos.order_summary = null;
-						pos.recent_order_list = null;
-						pos.table_selector = null;
-						pos.current_table_doc = null;
-						pos.$table_badge = null;
-						pos.table_mode = false;
-						pos._kitchen_sent = false;
-						pos._tip_item_code = null;
+						var _wait_for_profile = function () {
+							if (_pos.pos_profile) {
+								_restaurant_setup_done = true;
 
-						Object.setPrototypeOf(pos, awesome_restaurant3.RestaurantPosController.prototype);
-						_restaurant_setup_done = true;
+								if (typeof onScan !== "undefined" && onScan.detachFrom && onScan.isAttachedTo(document)) {
+									try { onScan.detachFrom(document); } catch (e) {}
+								}
+								document.querySelectorAll(".point-of-sale-app").forEach(function (el) { el.remove(); });
 
-						pos.make_app();
+								_pos.cart = null;
+								_pos.item_selector = null;
+								_pos.payment = null;
+								_pos.item_details = null;
+								_pos.order_summary = null;
+								_pos.recent_order_list = null;
+								_pos.table_selector = null;
+								_pos.current_table_doc = null;
+								_pos.$table_badge = null;
+								_pos.table_mode = false;
+								_pos._kitchen_sent = false;
+								_pos._tip_item_code = null;
 
-						erpnext.PointOfSale.Controller.prototype.make = _orig_make_pos;
+								Object.setPrototypeOf(_pos, awesome_restaurant3.RestaurantPosController.prototype);
+								_pos.make_app();
+
+								erpnext.PointOfSale.Controller.prototype.make = _orig_make_pos;
+							} else {
+								setTimeout(_wait_for_profile, 50);
+							}
+						};
+						_wait_for_profile();
 					});
 				});
 			}
