@@ -23,6 +23,8 @@ frappe.provide("awesome_restaurant3");
 
 						var _wait_for_profile = function () {
 							if (_pos.pos_profile) {
+								if (!_pos.settings) _pos.settings = {};
+								if (!_pos.settings.frm_doctype) _pos.settings.frm_doctype = "POS Invoice";
 								_restaurant_setup_done = true;
 
 								if (typeof onScan !== "undefined" && onScan.detachFrom && onScan.isAttachedTo(document)) {
