@@ -82,6 +82,8 @@ frappe.provide("awesome_restaurant3");
 frappe.pages["point-of-sale"].refresh = function (wrapper) {
 	if (document.scannerDetectionData) {
 		onScan.detachFrom(document);
+	}
+	if (wrapper.pos) {
 		wrapper.pos.wrapper.html("");
 		wrapper.pos.check_opening_entry();
 	}
