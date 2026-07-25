@@ -9,6 +9,8 @@ frappe.provide("awesome_restaurant3");
 		frappe.require = function (items, callback) {
 			if (items === "point-of-sale.bundle.js") {
 				return _orig_require(items, function () {
+					if (callback) callback();
+					wrapper.find(".point-of-sale-app").remove();
 					_orig_require("restaurant_pos.bundle.js", function () {
 						wrapper.pos = new awesome_restaurant3.RestaurantPosController(wrapper);
 						window.cur_pos = wrapper.pos;

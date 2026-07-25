@@ -5,8 +5,11 @@ class RestaurantPosController extends erpnext.PointOfSale.Controller {
     this.prepare_menu();
     this.prepare_btns();
 
-    const table_count = await frappe.db.count("POS Table");
-    if (table_count > 0) {
+    const tables = await frappe.db.get_list("POS Table", {
+      filters: [["POS Table Profile", "pos_profile", "=", this.pos_profile]],
+      fields: ["name"],
+    });
+    if (tables.length > 0) {
       this.table_mode = true;
       await this.load_table_grid();
     } else {
