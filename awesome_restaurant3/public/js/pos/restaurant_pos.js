@@ -4,27 +4,26 @@ frappe.provide("awesome_restaurant3");
 	var _orig_on_page_load = frappe.pages["point-of-sale"].on_page_load;
 
 	frappe.pages["point-of-sale"].on_page_load = function (wrapper) {
-		var _orig_require = frappe.require;
-
-		frappe.require = function (items, callback) {
-			if (items === "point-of-sale.bundle.js") {
-				return _orig_require(items, function () {
-					if (callback) callback();
-					_orig_require("restaurant_pos.bundle.js", function () {
-						setTimeout(function () {
-							document.querySelectorAll(".point-of-sale-app").forEach(function (el) { el.remove(); });
-							wrapper.pos = new awesome_restaurant3.RestaurantPosController(wrapper);
-							window.cur_pos = wrapper.pos;
-						}, 500);
-					});
-				});
-			}
-			return _orig_require(items, callback);
-		};
-
 		_orig_on_page_load(wrapper);
 
-		frappe.require = _orig_require;
+		frappe.require("restaurant_pos.bundle.js", function () {
+			var _attempts = 0;
+			var _do_replace = function () {
+				var apps = document.querySelectorAll(".point-of-sale-app");
+				if (apps.length === 0 && _attempts < 25) {
+					_attempts++;
+					setTimeout(_do_replace, 80);
+					return;
+				}
+				if (typeof onScan !== "undefined" && onScan.detachFrom) {
+					onScan.detachFrom(document);
+				}
+				apps.forEach(function (el) { el.remove(); });
+				wrapper.pos = new awesome_restaurant3.RestaurantPosController(wrapper);
+				window.cur_pos = wrapper.pos;
+			};
+			_do_replace();
+		});
 	};
 })();
 
