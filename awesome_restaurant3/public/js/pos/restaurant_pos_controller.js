@@ -316,8 +316,8 @@ class RestaurantPosController extends erpnext.PointOfSale.Controller {
   }
 
   init_item_selector() {
-    if (typeof onScan !== "undefined" && onScan.detachFrom) {
-      onScan.detachFrom(document);
+    if (typeof onScan !== "undefined" && onScan.detachFrom && onScan.isAttachedTo(document)) {
+      try { onScan.detachFrom(document); } catch (e) {}
     }
     this.item_selector = new erpnext.PointOfSale.ItemSelector({
       wrapper: this.$components_wrapper,
