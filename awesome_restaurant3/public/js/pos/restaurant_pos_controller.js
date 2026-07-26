@@ -12,6 +12,9 @@ class RestaurantPosController extends erpnext.PointOfSale.Controller {
     if (this._restaurant_make_app_done) return;
     this._restaurant_make_app_done = true;
 
+    if (!this.settings) this.settings = {};
+    if (!this.settings.invoice_fields) this.settings.invoice_fields = [];
+
     this.prepare_dom();
     this.prepare_components();
     this.prepare_menu();
