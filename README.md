@@ -63,7 +63,7 @@ bench --site <site-name> set-config developer_mode 1
 
 ### POS Profile
 
-Create a `POS Table Profile` record (child table of `POS Table`). Add a `pos_profile` link to associate tables with this profile.
+There is no standalone `POS Table Profile` record — it is a child table. On each `POS Table`, add a row in the `applicable_profiles` child table and set its `pos_profile` link to associate the table with that profile.
 
 - **`custom_tip_item`** (Link → Item): Non-stock item used for adding tips to restaurant orders.
 - Tables without any `applicable_profiles` → hidden from ALL POS sessions.
@@ -88,7 +88,7 @@ The app provides these custom fields (via `hooks.py` + `fixtures/custom_field.js
 **On `POS Profile`:**
 - `custom_tip_item` (Link → Item, after `allow_discount_change`)
 
-These are automatically created on `bench migrate`. On Frappe Cloud, also run the patches in `patches/v1_0/`.
+These are automatically created on `bench migrate` — the patches in `patches/v1_0/` are registered in `patches.txt` and run by `bench migrate`; no separate step is needed.
 
 ### Tables
 
@@ -117,10 +117,10 @@ Create `POS Table` records with `table_number` (unique Data) and `status` (Selec
 
 When a table's kitchen status is "Ready":
 - Item selector is hidden
-- Numapd is disabled
+- Numpad is disabled
 - Customer selection is disabled
 - "Print Bill" button appears in the totals section
-- Cart modifications are blocked with error: "Order is ready for payment. Cannot modify items."
+- Cart modifications are blocked with error: "Order is ready for payment. Cannot modify items." (Tips can still be added — `_show_tip_dialog`/`_add_tip_to_cart` have no lock check.)
 
 ### Going Back to Tables
 

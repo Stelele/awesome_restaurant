@@ -238,7 +238,8 @@ bench --site development.localhost run-tests --app awesome_restaurant3
 # Run Cypress UI tests (headless)
 bench --site development.localhost run-ui-tests awesome_restaurant3 --headless
 
-# Run a single Cypress spec
+# Run a single Cypress spec (path is an example placeholder — no cypress/ dir is committed;
+# place your spec under a local cypress/integration/, e.g. cypress/integration/ui_test_pos_table.js)
 bench --site development.localhost run-ui-tests awesome_restaurant3 --headless --spec "cypress/integration/ui_test_pos_table.js"
 ```
 
