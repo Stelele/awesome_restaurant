@@ -19,6 +19,20 @@ Replace the bare ERPNext POS table list with a visual grid of tables. Each table
 | **Table Badge Actions** | Per-table badge with "Send to Kitchen" button (draft → Received), "Order Ready" label, or navigation back to tables. |
 | **Cross-App Compatibility** | Save-and-delegate `on_page_load` pattern. Intercepts `frappe.require("point-of-sale.bundle.js")` to chain-load `restaurant_pos.bundle.js` after the standard bundle. Preserves `pos_expenses` buttons (Add Expense, Reprint Invoices, Refund, New Invoice, Close POS). |
 
+### Screenshots
+
+Table grid on the POS page (with `pos_expenses` toolbar buttons preserved):
+
+![POS table grid](docs/images/pos-table-grid.png)
+
+Inside a table — item selector, cart and tip UI:
+
+![POS item view](docs/images/pos-item-view.png)
+
+Kitchen Display with a live order:
+
+![Kitchen Display](docs/images/kitchen-display.png)
+
 ## Installation
 
 ### Via Bench CLI
